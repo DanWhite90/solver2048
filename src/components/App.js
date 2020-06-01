@@ -1,10 +1,10 @@
 import React from "react";
 
+import GameWrapper from "./game/GameWrapper";
+
 const App = () => {
   return (
-    <div>
-      This is the Game App
-    </div>
+    <GameWrapper />
   );
 }
 

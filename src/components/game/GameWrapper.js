@@ -1,7 +1,17 @@
 import React from "react";
 
+import GameHeader from "./GameHeader";
+import GameGrid from "./GameGrid";
+import GameControls from "./GameControls";
+
 const GameWrapper = () => {
-  return <div>GameWrapper</div>;
+  return (
+    <>
+      <GameHeader />
+      <GameGrid />
+      <GameControls />
+    </>
+  );
 }
 
 export default GameWrapper;
