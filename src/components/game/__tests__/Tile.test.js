@@ -22,6 +22,6 @@ it("contains the right props", () => {
 });
 
 it("renders the right value", () => {
-  expect(wrapper.find(Container).render().length).toBe(1);
-  expect(wrapper.find(Container).render().text()).toBe("1");
+  expect(wrapper.find("div").render().length).toBe(1);
+  expect(wrapper.find("div").render().text()).toBe("1");
 });

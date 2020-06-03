@@ -10,12 +10,18 @@ const GameGrid = props => {
     const grid = new Array(n).fill(new Array(m).fill(0));
     return grid.map((row, i) => {
       return (
-        <Row key={i}>
+        <Row 
+          key={i}
+          className="justify-content-center"
+        >
           {row.map((col, j) => {
             return (
-              <Col key={j}>
-                <Tile value={col} position={{x: i, y: j}} />
-              </Col>
+              <Col 
+                as={Tile}
+                key={j}
+                value={col} 
+                position={{x: i, y: j}} 
+              />
             );
           })}
         </Row>
@@ -24,7 +30,7 @@ const GameGrid = props => {
   }
 
   return (
-    <Container>
+    <Container className="grid">
       {renderGrid(props.n || GAME_GRID_SIZE_X, props.m || GAME_GRID_SIZE_Y)}
     </Container>
   );

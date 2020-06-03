@@ -4,7 +4,7 @@ import {Container} from "react-bootstrap";
 
 const Tile = props => {
   return (
-    <Container className="tile">{props.value}</Container>
+    <div className="tile"><div>{props.value}</div></div>
   );
 }
 

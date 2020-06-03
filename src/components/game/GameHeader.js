@@ -1,13 +1,24 @@
 import React from "react";
-import {Container, Row} from "react-bootstrap"; 
+import {Container, Row, Col, Button} from "react-bootstrap"; 
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faRedoAlt, faBackward, faBrain} from '@fortawesome/free-solid-svg-icons';
 
 const GameHeader = () => {
   return (
-    <Container>
+    <Container className="header">
+      <Row className="justify-content-end">
+          <Button className="rounded-circle" variant="danger">
+            <FontAwesomeIcon icon={faBrain} size="lg" />
+          </Button>
+          <Button className="rounded-circle" variant="info">
+            <FontAwesomeIcon icon={faBackward} size="lg" />
+          </Button>
+          <Button className="rounded-circle" variant="info">
+            <FontAwesomeIcon icon={faRedoAlt} size="lg" />
+          </Button>
+      </Row>
       <Row>
-        <div>Score: 0</div>
-        <button>Undo</button>
-        <button>Restart</button>
+        <Col>Score: 0</Col>
       </Row>
     </Container>
   );
