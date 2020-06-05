@@ -10,13 +10,10 @@ import GameControls from "./GameControls";
 
 const GameWrapper = () => {
 
-  const [gridState, setGridState] = useState(GRID_INITIAL_STATE());
-  // const [gridState, setGridState] = useState([[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]);
-
   return (
     <Container fluid className="wrapper">
       <GameHeader />
-      <GameGrid grid={gridState} handleChange={(newState) => setGridState(newState)} />
+      <GameGrid />
       <GameControls />
     </Container>
   );

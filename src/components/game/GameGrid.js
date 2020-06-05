@@ -1,5 +1,6 @@
 import React from "react";
 import {Container, Row, Col} from "react-bootstrap";
+import {connect} from "react-redux";
 
 import Tile from "./Tile";
 
@@ -8,9 +9,7 @@ const GameGrid = props => {
   function renderGrid(background = false) {
     return props.grid.map((row, i) => {
       return (
-        <Row 
-          key={i}
-        >
+        <Row key={i} >
           {row.map((col, j) => {
             return (
               <Col 
@@ -39,4 +38,8 @@ const GameGrid = props => {
   );
 }
 
-export default GameGrid;
+const mapStateToProps = state => {
+  return {grid: state.grid};
+}
+
+export default connect(mapStateToProps)(GameGrid);
