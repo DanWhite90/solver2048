@@ -98,6 +98,13 @@ body {
 .controls {
   margin-top: 20px;
   width: calc(var(--control-size)*3);
+  padding: 0;
+}
+
+.controls .row {
+  padding: 0;
+  height: var(--control-size);
+  margin: 0;
 }
 
 .controls .col{
