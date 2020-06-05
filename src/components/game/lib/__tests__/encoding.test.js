@@ -1,4 +1,4 @@
-import {encodeState, decodeState} from "../lib/encoding";
+import {encodeState, decodeState} from "../encoding";
 
 it("encodes the grid correctly", () => {
   

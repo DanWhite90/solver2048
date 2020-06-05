@@ -1,5 +1,4 @@
 import React from "react";
-import {Container} from "react-bootstrap";
 import {mount} from "enzyme";
 
 import Tile from "../Tile"; 
@@ -22,6 +21,6 @@ it("contains the right props", () => {
 });
 
 it("renders the right value", () => {
-  expect(wrapper.find("div").render().length).toBe(1);
-  expect(wrapper.find("div").render().text()).toBe("1");
+  expect(wrapper.length).toBe(1);
+  expect(wrapper.text()).toBe("1");
 });
