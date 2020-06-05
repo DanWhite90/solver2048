@@ -1,8 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import {Container} from "react-bootstrap";
-
-import {GRID_INITIAL_STATE} from "../../globalOptions";
-import {encodeState, decodeState} from "./lib/encoding";
 
 import GameHeader from "./GameHeader";
 import GameGrid from "./GameGrid";

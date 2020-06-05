@@ -17,6 +17,8 @@ export const ENCODING_BITS = 5;
 
 // Redux store constants
 export const REDUX_INITIAL_STATE = {
-  grid: GRID_INITIAL_STATE(),
-  aiActive: false
+  game: {
+    grid: GRID_INITIAL_STATE(),
+    aiActive: false
+  }
 };

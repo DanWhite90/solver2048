@@ -1,9 +1,7 @@
 import {combineReducers} from "redux";
 
-import gridReducer from "./gridReducer";
-import aiReducer from "./aiReducer";
+import gameReducer from "./gameReducer";
 
 export default combineReducers({
-  grid: gridReducer,
-  aiActive: aiReducer
+  game: gameReducer
 });

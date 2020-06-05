@@ -39,7 +39,7 @@ const GameGrid = props => {
 }
 
 const mapStateToProps = state => {
-  return {grid: state.grid};
+  return {grid: state.game.grid};
 }
 
 export default connect(mapStateToProps)(GameGrid);
