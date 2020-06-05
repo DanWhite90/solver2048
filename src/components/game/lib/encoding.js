@@ -1,4 +1,4 @@
-import {INITIAL_GRID_STATE, ENCODING_BITS} from "../../../globalOptions";
+import {GRID_INITIAL_STATE, ENCODING_BITS} from "../../../globalOptions";
 
 // These methods allow to compress the state of the game for memory efficiency, primarily to keep a history of the moves performed.
 
@@ -32,7 +32,7 @@ export function decodeState(encodedRef) {
   for (let i = 0; i < encoded.length; i++) {
     encoded[i] = encodedRef[i];
   }
-  let grid = INITIAL_GRID_STATE();
+  let grid = GRID_INITIAL_STATE();
   let tile = 0;
   let count = 0;
 

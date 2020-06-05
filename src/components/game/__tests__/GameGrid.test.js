@@ -2,13 +2,13 @@ import React from "react";
 import {mount} from "enzyme";
 import {Row, Col} from "react-bootstrap";
 
-import {INITIAL_GRID_STATE} from "../../../globalOptions";
+import {GRID_INITIAL_STATE} from "../../../globalOptions";
 import GameGrid from "../GameGrid";
 
 let wrapper;
 
 beforeEach(() => {
-  wrapper = mount(<GameGrid grid={INITIAL_GRID_STATE()} />);
+  wrapper = mount(<GameGrid grid={GRID_INITIAL_STATE()} />);
 });
 
 afterEach(() => {
