@@ -45,6 +45,11 @@ body {
   margin: auto 5px;
 }
 
+.header button:nth-child(2) {
+  height: 70px;
+  width: 70px;
+}
+
 .header .row:nth-child(2) {
   margin-top: 5px;
 }

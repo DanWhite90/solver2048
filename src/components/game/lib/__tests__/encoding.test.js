@@ -43,3 +43,14 @@ it("decodes the binary correctly", () => {
   expected = JSON.stringify([[32,16,0,0],[0,0,8,0],[0,0,1024,0],[0,0,0,0]]);
   expect(JSON.stringify(decodeState(encoded))).toEqual(expected);
 });
+
+it("makes encoding and decoding inverses of each other", () => {
+  let grid = [[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]];
+  let encoded = new Uint32Array(new ArrayBuffer(12));
+  encoded[0]=5000;
+  encoded[1]=1234;
+  encoded[2]=19999;
+
+  expect(JSON.stringify(decodeState(encodeState(grid)))).toEqual(JSON.stringify(grid));
+  expect(JSON.stringify(encodeState(decodeState(encoded)))).toEqual(JSON.stringify(encoded));
+});

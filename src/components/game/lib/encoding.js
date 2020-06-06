@@ -9,17 +9,17 @@ export function encodeState(grid) {
   // so 12 bytes in an unsigned 32 bits integer array on length 3
   let encoded = new Uint32Array(new ArrayBuffer(12));
   let count = 0;
+  let k = 0;
 
-  let i = 0;
   for (let row of grid) {
     for (let tile of row) {
-      if (tile) {
-        encoded[i] += Math.log(tile)/Math.log(2) * 2**(ENCODING_BITS*count);
+      if (tile !== 0) {
+        encoded[k] += Math.log2(tile) * 2**(ENCODING_BITS*count);
       }
       count++;
       if (count >= Math.floor(32 / ENCODING_BITS)) {
+        k++;
         count = 0;
-        i += 1;
       }
     }
   }
@@ -27,27 +27,24 @@ export function encodeState(grid) {
   return encoded;
 }
 
-export function decodeState(encodedRef) {
-  let encoded = new Uint32Array(new ArrayBuffer(12));
-  for (let i = 0; i < encoded.length; i++) {
-    encoded[i] = encodedRef[i];
-  }
+export function decodeState(encoded) {
+  let enc = encoded.slice(0);
   let grid = GRID_INITIAL_STATE();
-  let tile = 0;
   let count = 0;
-
   let k = 0;
+  let tile = 0;
+
   for (let i = 0; i < grid.length; i++) {
-    for (let j = 0; j < grid[0].length; j++) {
-      tile = encoded[k] % 2**ENCODING_BITS;
-      encoded[k] /= 2**ENCODING_BITS;
-      if (tile) {
-        grid[i][j] = 2**tile;
+    for (let j = 0; j < grid[i].length; j++) {
+      tile = 2**(enc[k] % 2**ENCODING_BITS);
+      enc[k] = enc[k] >> ENCODING_BITS;
+      if (tile > 1) {
+        grid[i][j] = tile;
       }
       count++;
       if (count >= Math.floor(32 / ENCODING_BITS)) {
+        k++;
         count = 0;
-        k += 1;
       }
     }
   }

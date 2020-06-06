@@ -19,6 +19,10 @@ export const ENCODING_BITS = 5;
 export const REDUX_INITIAL_STATE = {
   game: {
     grid: GRID_INITIAL_STATE(),
-    aiActive: false
+    aiActive: false,
+    score: 0,
+    gridHistory: []
   }
 };
+
+export const GRID_HISTORY_MAX_LENGTH = 20;
