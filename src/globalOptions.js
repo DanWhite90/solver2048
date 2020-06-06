@@ -4,6 +4,11 @@
 export const GAME_TILE_DEFAULT_VALUE = 0;
 export const GAME_GRID_SIZE_X = 4;
 export const GAME_GRID_SIZE_Y = 4;
+export const ENCODING_BITS = 5;
+export const UP = "UP";
+export const LEFT = "LEFT";
+export const RIGHT = "RIGHT";
+export const DOWN = "DOWN";
 
 export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_X, m = GAME_GRID_SIZE_Y) => {
   let grid = [];
@@ -13,7 +18,6 @@ export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_X, m = GAME_GRID_SIZE_Y) =
   return grid;
 };
 
-export const ENCODING_BITS = 5;
 
 // Redux store constants
 export const REDUX_INITIAL_STATE = {

@@ -11,16 +11,11 @@ const GameHeader = props => {
   const handleAIToggle = () => {
     props.toggleAI();
     // implement AI toggle logic
-
-    // mock game update DELETE THIS
-    props.updateGame([[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]], 16);
   }
 
   const handleRollback = () => {
     if (!props.aiActive) {
       props.rollbackHistory();
-      // implement rollback procedure
-      console.log("rollback clicked");
     }
   }
 
