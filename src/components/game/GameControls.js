@@ -11,7 +11,6 @@ const GameControls = props => {
 
   const handleClick = direction => {
     // mock game update DELETE THIS
-    console.log("ontouchstart" in document.documentElement);
     props.updateGame([[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]], 16);
   }
 
@@ -20,6 +19,7 @@ const GameControls = props => {
       <Row className="justify-content-center">
         <Col 
           onClick={() => handleClick(UP)}
+          onTouchStart={() => console.log("touched")}
           xs={4} 
           as={Button} 
           variant="primary" 
