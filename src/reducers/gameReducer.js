@@ -1,4 +1,4 @@
-import {UPDATE_GAME, AI_TOGGLE, RESET_GAME, ROLLBACK_HISTORY} from "../actions/types";
+import {UPDATE_GAME, AI_TOGGLE, RESET_GAME, ROLLBACK_HISTORY, START_GAME} from "../actions/types";
 import {REDUX_INITIAL_STATE, GRID_HISTORY_MAX_LENGTH} from "../globalOptions";
 import {encodeState, decodeState} from "../components/game/lib/encoding";
 
@@ -20,7 +20,7 @@ const gameReducer = (state = REDUX_INITIAL_STATE.game, action) => {
       };
 
     case RESET_GAME:
-      return {...REDUX_INITIAL_STATE.game, gridHistory: []};
+      return {...REDUX_INITIAL_STATE.game, gridHistory: [], gameStarted: state.gameStarted};
 
     case ROLLBACK_HISTORY:
       if (state.gridHistory.length) {
@@ -32,6 +32,9 @@ const gameReducer = (state = REDUX_INITIAL_STATE.game, action) => {
 
     case AI_TOGGLE:
       return {...state, aiActive: !state.aiActive};
+
+    case START_GAME:
+      return {...state, gameStarted: true};
 
     default:
       return state;

@@ -25,7 +25,11 @@ export const REDUX_INITIAL_STATE = {
     grid: GRID_INITIAL_STATE(),
     aiActive: false,
     score: 0,
-    gridHistory: []
+    gridHistory: [],
+    gameStarted: false
+  },
+  device: {
+    isTouchDevice: false
   }
 };
 
