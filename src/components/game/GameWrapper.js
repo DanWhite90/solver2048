@@ -30,7 +30,7 @@ const GameWrapper = props => {
     <Container fluid className="wrapper">
       <GameHeader />
       <GameGrid />
-      {props.isTouchDevice ? "" : <GameControls />}
+      {!props.isTouchDevice && <GameControls />}
     </Container>
   );
 }

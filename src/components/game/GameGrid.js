@@ -10,34 +10,53 @@ const GameGrid = props => {
     // implement styles to be added to render grid for animations
     if (!background) {
       if (col === 0) {
-        return {visibility: "hidden"};
+        return {opacity: 0};
       } else {
         if (col === 64) {
-          return {top: "217%"};
+          return {
+            transform: "translate(0, 200%)",
+            transition: "transform 1s"
+          };
         }
       }
     }
     return {};
   }
 
+  // const renderGrid = (background = false) => {
+  //   return props.grid.map((row, i) => {
+  //     return (
+  //       <Row key={i} >
+  //         {row.map((col, j) => {
+  //           return (
+  //             <Col 
+  //               as={Tile}
+  //               key={j}
+  //               value={background ? "" : col} 
+  //               position={{i, j}} 
+  //               className={background ? "tile-bg" : "tile"}
+  //               style={computeStyles(background, col)}
+  //             />
+  //           );
+  //         })}
+  //       </Row>
+  //     );
+  //   });
+  // }
+
   const renderGrid = (background = false) => {
     return props.grid.map((row, i) => {
-      return (
-        <Row key={i} >
-          {row.map((col, j) => {
-            return (
-              <Col 
-                as={Tile}
-                key={j}
-                value={background ? "" : col} 
-                position={{i, j}} 
-                className={background ? "tile-bg" : "tile"}
-                style={computeStyles(background, col)}
-              />
-            );
-          })}
-        </Row>
-      );
+      return row.map((col, j) => {
+        return (
+          <Tile
+            key={j}
+            value={background ? "" : col} 
+            position={{i, j}} 
+            className={background ? "tile-bg" : "tile"}
+            style={computeStyles(background, col)}
+          />
+        );
+      });
     });
   }
 
