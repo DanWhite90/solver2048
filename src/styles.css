@@ -99,6 +99,11 @@ body {
   justify-content: center;
   font-weight: 500;
   font-size: 1.1rem;
+  position: relative;
+}
+
+.tile-bg {
+  background-color: rgb(214, 203, 140);
 }
 
 .grid-wrapper .row {
@@ -106,10 +111,6 @@ body {
   width: 100%;
   margin: 0;
   padding: var(--tile-margin) 0;
-}
-
-.tile-bg {
-  background-color: rgb(206, 206, 206);
 }
 
 .controls {

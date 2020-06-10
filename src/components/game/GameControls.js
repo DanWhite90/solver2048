@@ -14,53 +14,42 @@ const GameControls = props => {
     props.updateGame([[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]], 16);
   }
 
+  const renderButton = (direction, icon) => {
+    return (
+      <Col 
+        disabled={props.aiActive ? true : false}
+        onClick={() => handleClick(direction)}
+        onTouchStart={() => console.log("touched")}
+        xs={4} 
+        as={Button} 
+        variant="primary" 
+        className="rounded-circle"
+      >
+        <FontAwesomeIcon icon={icon} size="lg"/>
+      </Col>
+    );
+  }
+
   return (
     <Container className="controls">
       <Row className="justify-content-center">
-        <Col 
-          onClick={() => handleClick(UP)}
-          onTouchStart={() => console.log("touched")}
-          xs={4} 
-          as={Button} 
-          variant="primary" 
-          className="rounded-circle"
-        >
-          <FontAwesomeIcon icon={faArrowUp} size="lg"/>
-        </Col>
+        {renderButton(UP, faArrowUp)}
       </Row>
       <Row className="justify-content-between">
-        <Col 
-          onClick={() => handleClick(LEFT)}
-          xs={4} 
-          as={Button} 
-          variant="primary" 
-          className="rounded-circle"
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size="lg"/>
-        </Col>
-        <Col 
-          onClick={() => handleClick(RIGHT)}
-          xs={4} 
-          as={Button} 
-          variant="primary" 
-          className="rounded-circle"
-        >
-          <FontAwesomeIcon icon={faArrowRight} size="lg"/>
-        </Col>
+        {renderButton(LEFT, faArrowLeft)}
+        {renderButton(RIGHT, faArrowRight)}
       </Row>
       <Row className="justify-content-center">
-        <Col 
-          onClick={() => handleClick(DOWN)}
-          xs={4} 
-          as={Button} 
-          variant="primary" 
-          className="rounded-circle"
-        >
-          <FontAwesomeIcon icon={faArrowDown} size="lg"/>
-        </Col>
+        {renderButton(DOWN, faArrowDown)}
       </Row>
     </Container>
   );
 }
 
-export default connect(null, actions)(GameControls);
+const mapStateToProps = state => {
+  return {
+    aiActive: state.game.aiActive
+  };
+}
+
+export default connect(mapStateToProps, actions)(GameControls);
