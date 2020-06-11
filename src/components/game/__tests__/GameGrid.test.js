@@ -1,8 +1,8 @@
 import React from "react";
 import {mount} from "enzyme";
-import {Row, Col} from "react-bootstrap";
 
 import GameGrid from "../GameGrid";
+import Tile from "../Tile";
 import Root from "../../../Root";
 
 let wrapper;
@@ -20,6 +20,5 @@ afterEach(() => {
 });
 
 it("renders rows and columns", () => {
-  expect(wrapper.find(".grid").find(Row)).toHaveLength(4);
-  expect(wrapper.find(".grid").find(Col)).toHaveLength(4 * 4);
+  expect(wrapper.find(".grid").find(Tile)).toHaveLength(4 * 4);
 });

@@ -9,6 +9,12 @@ export const UP = "UP";
 export const LEFT = "LEFT";
 export const RIGHT = "RIGHT";
 export const DOWN = "DOWN";
+export const directions = new Map([
+  ["ArrowUp", UP],
+  ["ArrowLeft", LEFT],
+  ["ArrowRight", RIGHT],
+  ["ArrowDown", DOWN]
+]);
 
 export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_N, m = GAME_GRID_SIZE_M) => {
   let grid = [];

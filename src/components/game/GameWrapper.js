@@ -5,19 +5,24 @@ import {connect} from "react-redux";
 import GameHeader from "./GameHeader";
 import GameGrid from "./GameGrid";
 import GameControls from "./GameControls";
+
+import {directions} from "../../globalOptions";
 import * as actions from "../../actions";
+import {handleMove} from "./lib/gameEngine";
 
 const GameWrapper = props => {
-
-  let {updateGame} = props;
+  let {updateGame, grid} = props;
 
   useEffect(() => {
-    console.log("effect called");
-    // make this handleKeyboard call the movement api through keyboard press
+    // this is the keybord event handler
     const handleKeyboard = e => {
       console.log(e.key);
 
-      // mock game update DELETE THIS
+      // process raw input to feed into handleMove()
+
+      // call handleMove()
+
+      // DELETE THIS SHOULD BE IN handleMove
       updateGame([[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]], 16);
     };
 
@@ -37,7 +42,8 @@ const GameWrapper = props => {
 
 const mapStateToProps = state => {
   return {
-    isTouchDevice: state.device.isTouchDevice
+    isTouchDevice: state.device.isTouchDevice,
+    grid: state.game.grid
   }
 }
 
