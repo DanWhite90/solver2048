@@ -1,6 +1,7 @@
 import React, {useEffect} from "react";
 import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
+import {Transition} from "react-transition-group";
 
 import GameHeader from "./GameHeader";
 import GameGrid from "./GameGrid";
@@ -12,9 +13,20 @@ import {handleMove} from "./lib/gameEngine";
 
 const GameWrapper = props => {
   let {grid} = props;
+  
+  const duration = 1000;
+  const defaultStyle = {
+    opacity: 0,
+    transition: `opacity ${duration}ms`
+  };
+  const transitionStyles = {
+    entering: { opacity: 0 },
+    entered:  { opacity: 1 },
+    exiting:  { opacity: 1 },
+    exited:  { opacity: 0 }
+  };
 
   useEffect(() => {
-    console.log("effect called");
     const handleKeyboardMove = e => {
       if (directions.has(e.key)) {
         console.log(e.key);
@@ -28,11 +40,15 @@ const GameWrapper = props => {
   }, [grid]);
 
   return (
-    <Container fluid className="wrapper">
-      <GameHeader />
-      <GameGrid />
-      {!props.isTouchDevice && <GameControls />}
-    </Container>
+    <Transition in={true} timeout={0} appear>
+      {state => (
+        <Container fluid className="wrapper" style={{...defaultStyle, ...transitionStyles[state]}}>
+          <GameHeader />
+          <GameGrid />
+          {!props.isTouchDevice && <GameControls />}
+        </Container>
+      )}
+    </Transition>
   );
 }
 

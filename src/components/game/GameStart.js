@@ -8,6 +8,14 @@ const GameStart = props => {
 
   const handleClick = () => {
     props.startGame();
+
+    // TEMPORARY STARTING STATE - DELET DIS!!!
+    props.updateGame([
+      [4,2,0,2],
+      [0,2,8,0],
+      [4,4,8,8],
+      [8,0,8,2]
+    ],0);
   }
 
   const handleTouch = () => {
