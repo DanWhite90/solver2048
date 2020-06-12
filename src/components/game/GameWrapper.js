@@ -11,25 +11,21 @@ import * as actions from "../../actions";
 import {handleMove} from "./lib/gameEngine";
 
 const GameWrapper = props => {
-  let {updateGame, grid} = props;
+  let {grid} = props;
 
   useEffect(() => {
-    // this is the keybord event handler
-    const handleKeyboard = e => {
-      console.log(e.key);
-
-      // process raw input to feed into handleMove()
-
-      // call handleMove()
-
-      // DELETE THIS SHOULD BE IN handleMove
-      updateGame([[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]], 16);
+    console.log("effect called");
+    const handleKeyboardMove = e => {
+      if (directions.has(e.key)) {
+        console.log(e.key);
+        handleMove(directions.get(e.key), grid);
+      }
     };
 
-    document.addEventListener("keydown", handleKeyboard);
+    document.addEventListener("keydown", handleKeyboardMove);
 
-    return () => document.removeEventListener("keydown", handleKeyboard);
-  }, [updateGame]);
+    return () => document.removeEventListener("keydown", handleKeyboardMove);
+  }, [grid]);
 
   return (
     <Container fluid className="wrapper">

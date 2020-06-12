@@ -1,4 +1,4 @@
-import {transpose, reverse, processMove} from "../gameEngine";
+import {transpose, reverse, processMove, changeSign} from "../gameEngine";
 import {UP, LEFT, RIGHT, DOWN} from "../../../../globalOptions";
 
 describe("transpose()", () => {
@@ -19,6 +19,15 @@ describe("reverse()", () => {
   });
 });
 
+describe("changeSign()", () => {
+  it("changes the sign correctly", () => {
+    const inputArray = [[0,1,-2],[1,0,-1]];
+    const expected = [[0,-1,2],[-1,0,1]]; 
+
+    expect(JSON.stringify(changeSign(inputArray))).toEqual(JSON.stringify(expected));
+  });
+});
+
 describe("processMove()", () => {
   const inputGrid = [
     [4,2,0,2],
@@ -36,7 +45,12 @@ describe("processMove()", () => {
         [0,0,0,0]
       ],
       deltaScore: 8 + 4 + 16,
-      destinations: []
+      destinations: [
+        [0,0,0,0],
+        [0,-1,-1,0],
+        [-2,-1,-2,-1],
+        [-2,0,-2,-1]
+      ]
     }],
     [LEFT, {
       newGrid: [
@@ -46,7 +60,12 @@ describe("processMove()", () => {
         [16,2,0,0]
       ],
       deltaScore: 4 + 24 + 16,
-      destinations: []
+      destinations: [
+        [0,0,0,-2],
+        [0,-1,-1,0],
+        [0,-1,-1,-2],
+        [0,0,-2,-2]
+      ]
     }],
     [RIGHT, {
       newGrid: [
@@ -56,7 +75,12 @@ describe("processMove()", () => {
         [0,0,16,2]
       ],
       deltaScore: 4 + 24 + 16,
-      destinations: []
+      destinations: [
+        [2,2,0,0],
+        [0,1,1,0],
+        [2,1,1,0],
+        [2,0,0,0]
+      ]
     }],
     [DOWN, {
       newGrid: [
@@ -66,7 +90,12 @@ describe("processMove()", () => {
         [8,4,16,2]
       ],
       deltaScore: 8 + 4 + 16,
-      destinations: []
+      destinations: [
+        [2,2,0,1],
+        [0,1,1,0],
+        [0,1,1,0],
+        [0,0,0,0]
+      ]
     }]
   ]);
 
@@ -85,5 +114,10 @@ describe("processMove()", () => {
   });
 
   // test correctness of destination tile for animations
+  [UP, LEFT, RIGHT, DOWN].forEach(direction => {
+    it(`slides the tiles ${direction} correctly`, () => {
+      expect(JSON.stringify(result.get(direction).destinations)).toEqual(JSON.stringify(expected.get(direction).destinations));
+    });
+  });
 
 });
