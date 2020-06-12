@@ -22,12 +22,6 @@ export const directions = new Map([
 export const TILE_2_PROBABILITY = 0.9;
 
 export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_N, m = GAME_GRID_SIZE_M) => {
-  return [
-    [4,2,0,2],
-    [0,2,8,0],
-    [4,4,8,8],
-    [8,0,8,2]
-  ];
   let grid = [];
   for (let i = 0; i < n; i++) {
     grid.push(new Array(m).fill(GAME_TILE_DEFAULT_VALUE));
