@@ -1,4 +1,4 @@
-import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS} from "./types";
+import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS} from "./types";
 
 // Game action creators
 export const updateGame = (grid, deltaScore) => {
@@ -38,4 +38,12 @@ export const setTouchStatus = () => {
   return {
     type: SET_TOUCH_STATUS
   }
+}
+
+// UI action creators
+export const storeDestinations = (direction, destinations) => {
+  return {
+    type: STORE_DESTINATIONS,
+    payload: {direction, destinations}
+  };
 }

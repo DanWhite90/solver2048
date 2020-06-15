@@ -10,8 +10,7 @@ import {UP, LEFT, RIGHT, DOWN} from "../../globalOptions";
 const GameControls = props => {
 
   const handleClick = direction => {
-    // mock game update DELETE THIS
-    props.updateGame([[2,4,8,16],[32,64,0,65536],[65536,65536,65536,65536],[0,0,0,2]], 16);
+    // implement handle move
   }
 
   const renderButton = (direction, icon) => {

@@ -3,19 +3,20 @@ import {connect} from "react-redux";
 
 import GameWrapper from "./game/GameWrapper";
 import GameStart from "./game/GameStart";
+import {GAME_INIT} from "../globalOptions"; 
 
 const App = props => {
 
-  if (props.gameStarted) {
-    return <GameWrapper />;
-  } else {
+  if (props.status === GAME_INIT) {
     return <GameStart />;
+  } else {
+    return <GameWrapper />;
   }
 }
 
 const mapStateToProps = state => {
   return {
-    gameStarted: state.game.gameStarted
+    status: state.game.status
   }
 }
 

@@ -29,6 +29,10 @@ export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_N, m = GAME_GRID_SIZE_M) =
   return grid;
 };
 
+export const GAME_INIT = 0;
+export const GAME_STARTED = 1;
+export const GAME_OVER = 2;
+
 
 // Redux store constants
 export const REDUX_INITIAL_STATE = {
@@ -37,10 +41,15 @@ export const REDUX_INITIAL_STATE = {
     aiActive: false,
     score: 0,
     gridHistory: [],
-    gameStarted: false
+    status: GAME_INIT
   },
   device: {
     isTouchDevice: false
+  },
+  ui: {
+    direction: LEFT,
+    destinations: GRID_INITIAL_STATE(),
+    newTile: {i: 0, j: 0, value: 2}
   }
 };
 

@@ -1,5 +1,17 @@
-import {GRID_INITIAL_STATE, UP, RIGHT, DOWN, TILE_2_PROBABILITY} from "../../../globalOptions";
-import { updateGame } from "../../../actions";
+import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY} from "../../../globalOptions";
+
+
+// HELPER FUNCTIONS
+
+export const copyGrid = (arr = GRID_INITIAL_STATE()) => {
+  const newArr = [];
+  
+  for (let row of arr) {
+    newArr.push(row.slice(0));
+  }
+
+  return newArr;
+}
 
 export const transpose = arr => {
   const n = arr.length;
@@ -48,13 +60,21 @@ export const changeSign = arr => {
   return newArr;
 }
 
+export const zeroCount = arr => {
+  let count = 0;
+  
+  for (let row of arr) {
+    count += row.filter(el => el === 0).length;
+  }
+
+  return count;
+}
+
 // only need to stack left, all the other directions can be acheived by transposition and reversal
 export const stackLeft = grid => {
   let newGrid = [];
   let deltaScore = 0;
   let destinations = [];
-
-  // IMPLEMENT DESTINATIONS
 
   for (let row of grid) {
     let newRow = new Array(row.length).fill(0);
@@ -85,6 +105,9 @@ export const stackLeft = grid => {
   return {newGrid, deltaScore, destinations};
 }
 
+
+// GAME ENGINE FUNCTIONS
+
 export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   let newGrid, deltaScore, destinations;
 
@@ -114,18 +137,44 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   return {newGrid, deltaScore, destinations};
 };
 
-export const generateTile = grid => {
+// test used only for testing purposes forces a 2 in the first available zero tile
+export const addRandomTile = (grid, test = false) => {
+  const zeros = zeroCount(grid);
+  if (!zeros) {
+    return grid;
+  }
+
+  // random parameters initialization - fixed in test mode
+  let pos = test ? 1 : Math.ceil(Math.random() * zeros);
+  const newTile = test ? 2 : Math.random() < TILE_2_PROBABILITY ? 2 : 4;
+
+  let newGrid = copyGrid(grid);
+
+  for (let i = 0; i < newGrid.length; i++) {
+    for (let j = 0; j < newGrid[i].length; j++) {
+      if (!newGrid[i][j]) {
+        pos--;
+      }
+      if (!pos) {
+        newGrid[i][j] = newTile;
+        break;
+      }
+    }
+    if (!pos) {
+      break;
+    }
+  }
   
+  return newGrid;
 };
 
-// this is the common event handler called by any input type handler touch/mouse/keyboard
-export const handleMove = (direction, grid) => {
-  // call processMove() to stack grid
-  let {newGrid, deltaScore, destinations} = processMove(direction, grid);
-  console.log(newGrid);
-  // handle animations parameters
+export const gameOver = grid => {
+  // process grid to return true
+  if (!zeroCount(grid)) {
+    return ![UP, LEFT, RIGHT, DOWN]
+      .map(direction => processMove(direction, grid).deltaScore)
+      .reduce((totSum, score) => totSum + score);
+  }
 
-
-  // call redux action creator updateGame() ?
-  updateGame(newGrid, deltaScore);
+  return false;
 };

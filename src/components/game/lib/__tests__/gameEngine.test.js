@@ -1,4 +1,4 @@
-import {transpose, reverse, processMove, changeSign} from "../gameEngine";
+import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, gameOver, addRandomTile} from "../gameEngine";
 import {UP, LEFT, RIGHT, DOWN} from "../../../../globalOptions";
 
 describe("transpose()", () => {
@@ -25,6 +25,26 @@ describe("changeSign()", () => {
     const expected = [[0,-1,2],[-1,0,1]]; 
 
     expect(JSON.stringify(changeSign(inputArray))).toEqual(JSON.stringify(expected));
+  });
+});
+
+describe("zeroCount()", () => {
+  it("counts zeros correctly", () => {
+    const inputArray = [[0,1,-2],[1,0,-1]];
+    const expected = 2; 
+
+    expect(zeroCount(inputArray)).toEqual(expected);
+  });
+});
+
+describe("copyGrid()", () => {
+  it("generates deep copy of grid", () => {
+    const original = [[0,1,-2],[1,0,-1]];
+    const inputArray = copyGrid(original);
+    original[0][0] = 100;
+    const expected = [[0,1,-2],[1,0,-1]]; 
+
+    expect(JSON.stringify(inputArray)).toEqual(JSON.stringify(expected));
   });
 });
 
@@ -120,4 +140,69 @@ describe("processMove()", () => {
     });
   });
 
+});
+
+describe("addRandomTile()", () => {
+  it("generates the tile in the right place", () => {
+    const grid = [
+      [2,4,4,8],
+      [4,0,0,2],
+      [4,0,2,8],
+      [4,8,8,2]
+    ];
+    const expected = [
+      [2,4,4,8],
+      [4,2,0,2],
+      [4,0,2,8],
+      [4,8,8,2]
+    ];
+
+    expect(JSON.stringify(addRandomTile(grid, true))).toEqual(JSON.stringify(expected));
+  });
+
+  it("returns the input grid when there are no empty slots", () => {
+    const grid = [
+      [2,4,8,16],
+      [4,2,16,8],
+      [8,16,64,4],
+      [2,2,16,8]
+    ];
+
+    expect(JSON.stringify(addRandomTile(grid, true))).toEqual(JSON.stringify(grid));
+  });
+});
+
+describe("gameOver()", () => {
+  it("allows the game to continue when there are empty tiles", () => {
+    const grid = [
+      [2,4,8,16],
+      [0,2,16,8],
+      [8,16,64,128],
+      [2,4,16,8]
+    ];
+
+    expect(gameOver(grid)).toEqual(false);
+  });
+
+  it("allows the game to continue when the grid is full but a move is possible", () => {
+    const grid = [
+      [2,4,8,16],
+      [4,2,16,8],
+      [8,16,64,4],
+      [2,2,16,8]
+    ];
+
+    expect(gameOver(grid)).toEqual(false);
+  });
+
+  it("allows stops the game when the grid is full and no move is possible", () => {
+    const grid = [
+      [2,4,8,16],
+      [4,2,16,8],
+      [8,16,64,4],
+      [2,4,16,8]
+    ];
+
+    expect(gameOver(grid)).toEqual(true);
+  });
 });

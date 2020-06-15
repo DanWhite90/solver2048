@@ -1,5 +1,5 @@
 import gameReducer from "../gameReducer";
-import {REDUX_INITIAL_STATE} from "../../globalOptions";
+import {REDUX_INITIAL_STATE, GAME_STARTED} from "../../globalOptions";
 import {UPDATE_GAME, AI_TOGGLE, RESET_GAME} from "../../actions/types";
 import {encodeState} from "../../components/game/lib/encoding";
 
@@ -34,7 +34,8 @@ describe("gameReducer", () => {
 
     let result = {
       ...REDUX_INITIAL_STATE.game,
-      gridHistory: []
+      gridHistory: [],
+      status: GAME_STARTED
     };
 
     expect(JSON.stringify(gameReducer(REDUX_INITIAL_STATE.game, action))).toEqual(JSON.stringify(result));
