@@ -41,7 +41,8 @@ export const REDUX_INITIAL_STATE = {
     aiActive: false,
     score: 0,
     gridHistory: [],
-    status: GAME_INIT
+    status: GAME_INIT,
+    moveCount: 0
   },
   device: {
     isTouchDevice: false

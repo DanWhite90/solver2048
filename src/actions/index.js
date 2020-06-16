@@ -1,4 +1,4 @@
-import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS} from "./types";
+import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT} from "./types";
 
 // Game action creators
 export const updateGame = (grid, deltaScore) => {
@@ -7,6 +7,12 @@ export const updateGame = (grid, deltaScore) => {
     payload: {grid, deltaScore}
   };
 };
+
+export const increaseMoveCount = () => {
+  return {
+    type: INCREASE_MOVE_COUNT
+  }
+}
 
 export const resetGame = () => {
   return {

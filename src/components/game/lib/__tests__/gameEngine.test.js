@@ -1,4 +1,4 @@
-import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, gameOver, addRandomTile} from "../gameEngine";
+import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, gameOver, addRandomTile, isNonEmpty} from "../gameEngine";
 import {UP, LEFT, RIGHT, DOWN} from "../../../../globalOptions";
 
 describe("transpose()", () => {
@@ -169,6 +169,30 @@ describe("addRandomTile()", () => {
     ];
 
     expect(JSON.stringify(addRandomTile(grid, true))).toEqual(JSON.stringify(grid));
+  });
+});
+
+describe("isNonEmpty()", () => {
+  it("corretly validates a valid move", () => {
+    const grid = [
+      [1,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0]
+    ];
+
+    expect(isNonEmpty(grid)).toEqual(true);
+  });
+  
+  it("corretly rejects an invalid move", () => {
+    const grid = [
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0]
+    ];
+
+    expect(isNonEmpty(grid)).toEqual(false);
   });
 });
 

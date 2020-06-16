@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
-import {Transition} from "react-transition-group";
+// import {Transition} from "react-transition-group";
 
 import {LEFT, RIGHT} from "../../globalOptions";
+import {addRandomTile} from "./lib/gameEngine";
+import * as actions from "../../actions";
 
 import Tile from "./Tile";
 
 const GameGrid = props => {
+  let {moveCount} = props;
 
   const duration = 1000;
 
@@ -73,6 +76,13 @@ const GameGrid = props => {
     });
   }
 
+  useEffect(() => {
+    if (props.computedGrid) {
+      const newGrid = addRandomTile(props.computedGrid);
+      props.updateGame(newGrid, props.computedScore);
+    }
+  }, [moveCount]);
+
   return (
     <Container className="grid-wrapper">
       <Container className="grid-bg">
@@ -88,9 +98,10 @@ const GameGrid = props => {
 const mapStateToProps = state => {
   return {
     grid: state.game.grid,
+    moveCount: state.game.moveCount,
     direction: state.ui.direction,
     destinations: state.ui.destinations
   };
 }
 
-export default connect(mapStateToProps)(GameGrid);
+export default connect(mapStateToProps, actions)(GameGrid);

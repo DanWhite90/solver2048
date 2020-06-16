@@ -18,10 +18,7 @@ describe("gameReducer", () => {
       ...REDUX_INITIAL_STATE.game, 
       grid: [[1,3,6,7],[4,8,0,1],[12,3,4,5],[78,6,5,4]],
       score: REDUX_INITIAL_STATE.game.score + 16,
-      gridHistory: [{
-        score: REDUX_INITIAL_STATE.game.score,
-        encoded: encodeState(REDUX_INITIAL_STATE.game.grid)
-      }]
+      gridHistory: []
     };
 
     expect(JSON.stringify(gameReducer(REDUX_INITIAL_STATE.game, action))).toEqual(JSON.stringify(result));
@@ -34,8 +31,7 @@ describe("gameReducer", () => {
 
     let result = {
       ...REDUX_INITIAL_STATE.game,
-      gridHistory: [],
-      status: GAME_STARTED
+      gridHistory: []
     };
 
     expect(JSON.stringify(gameReducer(REDUX_INITIAL_STATE.game, action))).toEqual(JSON.stringify(result));

@@ -3,19 +3,14 @@ import {connect} from "react-redux";
 import {Container, Button} from "react-bootstrap";
 
 import * as actions from "../../actions";
+import {addRandomTile} from "./lib/gameEngine";
 
 const GameStart = props => {
 
   const handleClick = () => {
     props.startGame();
-
-    // TEMPORARY STARTING STATE - DELET DIS!!!
-    props.updateGame([
-      [4,2,0,2],
-      [0,2,8,0],
-      [4,4,8,8],
-      [8,0,8,2]
-    ],0);
+    const newGrid = addRandomTile(props.grid);
+    props.updateGame(newGrid, 0);
   }
 
   const handleTouch = () => {
@@ -38,4 +33,8 @@ const GameStart = props => {
   );
 }
 
-export default connect(null, actions)(GameStart);
+const mapStateToProps = state => {
+  return {grid: state.game.grid};
+};
+
+export default connect(mapStateToProps, actions)(GameStart);

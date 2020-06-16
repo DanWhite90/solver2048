@@ -137,7 +137,7 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   return {newGrid, deltaScore, destinations};
 };
 
-// test used only for testing purposes forces a 2 in the first available zero tile
+// test variable used only for testing purposes forces a 2 in the first available zero tile
 export const addRandomTile = (grid, test = false) => {
   const zeros = zeroCount(grid);
   if (!zeros) {
@@ -167,6 +167,9 @@ export const addRandomTile = (grid, test = false) => {
   
   return newGrid;
 };
+
+// check validity by summing up the destinations - if non-zero a movement has been made
+export const isNonEmpty = destinations => !!destinations.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b);
 
 export const gameOver = grid => {
   // process grid to return true

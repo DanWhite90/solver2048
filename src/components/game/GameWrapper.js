@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from "react";
+import React, {useEffect, useState} from "react";
 import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
 import {Transition} from "react-transition-group";
@@ -9,7 +9,7 @@ import GameControls from "./GameControls";
 
 import {directions} from "../../globalOptions";
 import * as actions from "../../actions";
-import {processMove} from "./lib/gameEngine";
+import {processMove, isNonEmpty} from "./lib/gameEngine";
 
 const duration = 1000;
 const defaultStyle = {
@@ -26,11 +26,20 @@ const transitionStyles = {
 const GameWrapper = props => {
   let {grid} = props;
 
-  const gridRef = useRef(null);
+  const [computedGrid, setComputedGrid] = useState();
+  const [computedScore, setComputedScore] = useState();
   
   const handleMove = (direction, grid) => {
     let {newGrid, deltaScore, destinations} = processMove(direction, grid);
-    props.storeDestinations(direction, destinations);
+    // acertain that a valid move has been made or game just started
+    if (isNonEmpty(destinations) || !isNonEmpty(newGrid)) {
+      console.log("move made");
+      setComputedGrid(newGrid);
+      setComputedScore(deltaScore);
+  
+      props.increaseMoveCount();
+      // props.storeDestinations(direction, destinations);
+    }
   };
 
   useEffect(() => {
@@ -49,8 +58,8 @@ const GameWrapper = props => {
       {state => (
         <Container fluid className="wrapper" style={{...defaultStyle, ...transitionStyles[state]}}>
           <GameHeader />
-          <GameGrid gridRef={gridRef} />
-          {!props.isTouchDevice && <GameControls handleMove gridRef={gridRef} />}
+          <GameGrid computedGrid={computedGrid} computedScore={computedScore} />
+          {!props.isTouchDevice && <GameControls handleMove />}
         </Container>
       )}
     </Transition>
