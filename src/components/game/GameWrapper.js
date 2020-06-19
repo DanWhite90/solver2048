@@ -33,7 +33,6 @@ const GameWrapper = props => {
     let {newGrid, deltaScore, destinations} = processMove(direction, grid);
     // acertain that a valid move has been made or game just started
     if (isNonEmpty(destinations) || !isNonEmpty(newGrid)) {
-      console.log("move made");
       setComputedGrid(newGrid);
       setComputedScore(deltaScore);
   
