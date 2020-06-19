@@ -1,0 +1,10 @@
+Gameplay flow:
+
+1) Use previous grid state (start from empty)
+2) Check termination conditions
+3) Add random tile with animation (lock input)
+----------
+4) Player move - process game logic
+5) Animate tiles to reach new destination (lock input)
+6) Render new values of tiles at the end of the animation (upgrade redux store to trigger rerender)
+7) GOTO 1)
