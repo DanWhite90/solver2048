@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
 import {Transition} from "react-transition-group";
@@ -7,9 +7,9 @@ import GameHeader from "./GameHeader";
 import GameGrid from "./GameGrid";
 import GameControls from "./GameControls";
 
-import {directions} from "../../globalOptions";
 import * as actions from "../../actions";
 import {processMove, isNonEmpty} from "./lib/gameEngine";
+import {ANIM_SLIDE} from "../../globalOptions";
 
 const duration = 1000;
 const defaultStyle = {
@@ -24,41 +24,30 @@ const transitionStyles = {
 };
 
 const GameWrapper = props => {
-  let {grid} = props;
-
-  const [computedGrid, setComputedGrid] = useState();
-  const [computedScore, setComputedScore] = useState();
   
+  // generic move handler to be passed for touch/keyboard/mouse handlers
   const handleMove = (direction, grid) => {
-    let {newGrid, deltaScore, destinations} = processMove(direction, grid);
-    // acertain that a valid move has been made or game just started
-    if (isNonEmpty(destinations) || !isNonEmpty(newGrid)) {
-      setComputedGrid(newGrid);
-      setComputedScore(deltaScore);
+    // can make a move only if there's no active animation
+    if (!props.animPhase) {
+      let {newGrid, deltaScore, destinations} = processMove(direction, grid);
   
-      props.increaseMoveCount();
-      // props.storeDestinations(direction, destinations);
+      // check that a valid move has been made or that the game just started
+      if (isNonEmpty(destinations) || !isNonEmpty(newGrid)) {
+        props.storePartialMove(newGrid, deltaScore);
+        props.storeDestinations(direction, destinations);
+        props.setAnimationPhase(ANIM_SLIDE);
+        // props.increaseMoveCount();
+      }
     }
   };
-
-  useEffect(() => {
-    const handleKeyboardMove = e => {
-      if (directions.has(e.key)) {
-        handleMove(directions.get(e.key), grid);
-      }
-    };
-    document.addEventListener("keydown", handleKeyboardMove);
-
-    return () => document.removeEventListener("keydown", handleKeyboardMove);
-  });
 
   return (
     <Transition in={true} timeout={0} appear>
       {state => (
         <Container fluid className="wrapper" style={{...defaultStyle, ...transitionStyles[state]}}>
           <GameHeader />
-          <GameGrid computedGrid={computedGrid} computedScore={computedScore} />
-          {!props.isTouchDevice && <GameControls handleMove />}
+          <GameGrid handleMove={handleMove} />
+          {!props.isTouchDevice && <GameControls handleMove={handleMove} />}
         </Container>
       )}
     </Transition>
@@ -68,7 +57,8 @@ const GameWrapper = props => {
 const mapStateToProps = state => {
   return {
     isTouchDevice: state.device.isTouchDevice,
-    grid: state.game.grid
+    grid: state.game.grid,
+    animPhase: state.ui.animPhase
   }
 }
 

@@ -60,7 +60,8 @@ const mapStateToProps = state => {
   return {
     aiActive: state.game.aiActive,
     emptyHistory: !state.game.gridHistory.length,
-    score: state.game.score
+    score: state.game.score,
+    grid: state.game.grid
   };
 }
 

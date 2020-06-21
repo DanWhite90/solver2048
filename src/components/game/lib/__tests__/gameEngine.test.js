@@ -1,4 +1,4 @@
-import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, gameOver, addRandomTile, isNonEmpty} from "../gameEngine";
+import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, isGameOver, addRandomTile, isNonEmpty} from "../gameEngine";
 import {UP, LEFT, RIGHT, DOWN} from "../../../../globalOptions";
 
 describe("transpose()", () => {
@@ -150,12 +150,15 @@ describe("addRandomTile()", () => {
       [4,0,2,8],
       [4,8,8,2]
     ];
-    const expected = [
-      [2,4,4,8],
-      [4,2,0,2],
-      [4,0,2,8],
-      [4,8,8,2]
-    ];
+    const expected = {
+      newGrid: [
+        [2,4,4,8],
+        [4,2,0,2],
+        [4,0,2,8],
+        [4,8,8,2]
+      ],
+      newTile: {i: 1, j: 1, value: 2}
+    };
 
     expect(JSON.stringify(addRandomTile(grid, true))).toEqual(JSON.stringify(expected));
   });
@@ -167,8 +170,17 @@ describe("addRandomTile()", () => {
       [8,16,64,4],
       [2,2,16,8]
     ];
+    const expected = {
+      newGrid: [
+        [2,4,8,16],
+        [4,2,16,8],
+        [8,16,64,4],
+        [2,2,16,8]
+      ],
+      newTile: null
+    };
 
-    expect(JSON.stringify(addRandomTile(grid, true))).toEqual(JSON.stringify(grid));
+    expect(JSON.stringify(addRandomTile(grid, true))).toEqual(JSON.stringify(expected));
   });
 });
 
@@ -196,7 +208,7 @@ describe("isNonEmpty()", () => {
   });
 });
 
-describe("gameOver()", () => {
+describe("isGameOver()", () => {
   it("allows the game to continue when there are empty tiles", () => {
     const grid = [
       [2,4,8,16],
@@ -205,7 +217,7 @@ describe("gameOver()", () => {
       [2,4,16,8]
     ];
 
-    expect(gameOver(grid)).toEqual(false);
+    expect(isGameOver(grid)).toEqual(false);
   });
 
   it("allows the game to continue when the grid is full but a move is possible", () => {
@@ -216,7 +228,7 @@ describe("gameOver()", () => {
       [2,2,16,8]
     ];
 
-    expect(gameOver(grid)).toEqual(false);
+    expect(isGameOver(grid)).toEqual(false);
   });
 
   it("allows stops the game when the grid is full and no move is possible", () => {
@@ -227,6 +239,6 @@ describe("gameOver()", () => {
       [2,4,16,8]
     ];
 
-    expect(gameOver(grid)).toEqual(true);
+    expect(isGameOver(grid)).toEqual(true);
   });
 });

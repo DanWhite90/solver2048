@@ -141,7 +141,7 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
 export const addRandomTile = (grid, test = false) => {
   const zeros = zeroCount(grid);
   if (!zeros) {
-    return grid;
+    return {newGrid: grid, newTile: null};
   }
 
   // random parameters initialization - fixed in test mode
@@ -150,8 +150,9 @@ export const addRandomTile = (grid, test = false) => {
 
   let newGrid = copyGrid(grid);
 
-  for (let i = 0; i < newGrid.length; i++) {
-    for (let j = 0; j < newGrid[i].length; j++) {
+  let i, j;
+  for (i = 0; i < newGrid.length; i++) {
+    for (j = 0; j < newGrid[i].length; j++) {
       if (!newGrid[i][j]) {
         pos--;
       }
@@ -165,13 +166,13 @@ export const addRandomTile = (grid, test = false) => {
     }
   }
   
-  return newGrid;
+  return {newGrid: newGrid, newTile: {i: i, j: j, value: newTile}};
 };
 
 // check validity by summing up the destinations - if non-zero a movement has been made
 export const isNonEmpty = destinations => !!destinations.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b);
 
-export const gameOver = grid => {
+export const isGameOver = grid => {
   // process grid to return true
   if (!zeroCount(grid)) {
     return ![UP, LEFT, RIGHT, DOWN]

@@ -6,7 +6,7 @@ import {REDUX_INITIAL_STATE} from "./globalOptions";
 import reducers from "./reducers";
 
 const composeEnhancers = (typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) || compose;
-let store = createStore(reducers, REDUX_INITIAL_STATE, composeEnhancers());
+let store = createStore(reducers, REDUX_INITIAL_STATE(), composeEnhancers());
 
 export default ({children}) => {
   return (

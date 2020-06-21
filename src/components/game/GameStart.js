@@ -9,14 +9,12 @@ const GameStart = props => {
 
   const handleClick = () => {
     props.startGame();
-    const newGrid = addRandomTile(props.grid);
-    props.updateGame(newGrid, 0);
   }
 
   const handleTouch = () => {
     props.setTouchStatus();
   }
-
+  
   return (
     <Container fluid className="wrapper">
       <h1>2048</h1>

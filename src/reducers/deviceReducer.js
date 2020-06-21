@@ -1,7 +1,7 @@
 import {SET_TOUCH_STATUS} from "../actions/types";
 import {REDUX_INITIAL_STATE} from "../globalOptions";
 
-const deviceReducer = (state = REDUX_INITIAL_STATE.device, action) => {
+const deviceReducer = (state = REDUX_INITIAL_STATE().device, action) => {
   switch (action.type) {
 
     case SET_TOUCH_STATUS:

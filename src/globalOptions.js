@@ -34,15 +34,25 @@ export const GAME_STARTED = 1;
 export const GAME_OVER = 2;
 
 
+// UI Constants
+export const ANIM_NONE = 0;
+export const ANIM_SLIDE = 1;
+export const ANIM_NEW_TILE = 2;
+
+
 // Redux store constants
-export const REDUX_INITIAL_STATE = {
+export const REDUX_INITIAL_STATE = () => ({
   game: {
     grid: GRID_INITIAL_STATE(),
     aiActive: false,
     score: 0,
-    gridHistory: [],
+    gridHistory: [],  // encoded with the encoding library for efficiency
     status: GAME_INIT,
-    moveCount: 0
+    moveCount: 0,
+    // breakdown of grid updates in animations
+    newTile: {i: 0, j: 0, value: 0},
+    computedGrid: GRID_INITIAL_STATE(), // resulting grid after stacking but before adding new tile
+    computedScore: 0
   },
   device: {
     isTouchDevice: false
@@ -50,8 +60,8 @@ export const REDUX_INITIAL_STATE = {
   ui: {
     direction: LEFT,
     destinations: GRID_INITIAL_STATE(),
-    newTile: {i: 0, j: 0, value: 2}
+    animPhase: ANIM_NEW_TILE
   }
-};
+});
 
 export const GRID_HISTORY_MAX_LENGTH = 20;

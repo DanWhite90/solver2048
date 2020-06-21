@@ -1,10 +1,11 @@
-import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT} from "./types";
+import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE, SET_ANIMATION_PHASE} from "./types";
 
 // Game action creators
-export const updateGame = (grid, deltaScore) => {
+export const updateGame = (grid, deltaScore, newTile) => {
+  console.log(grid, deltaScore, newTile);
   return {
     type: UPDATE_GAME,
-    payload: {grid, deltaScore}
+    payload: {grid, deltaScore, newTile}
   };
 };
 
@@ -38,6 +39,13 @@ export const startGame = () => {
   }
 }
 
+export const storePartialMove = (computedGrid, computedScore) => {
+  return {
+    type: STORE_PARTIAL_MOVE,
+    payload: {computedGrid, computedScore}
+  }
+}
+
 
 // Device action creators
 export const setTouchStatus = () => {
@@ -51,5 +59,12 @@ export const storeDestinations = (direction, destinations) => {
   return {
     type: STORE_DESTINATIONS,
     payload: {direction, destinations}
+  };
+}
+
+export const setAnimationPhase = phase => {
+  return {
+    type: SET_ANIMATION_PHASE,
+    payload: phase
   };
 }
