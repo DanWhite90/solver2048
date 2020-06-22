@@ -16,7 +16,6 @@ const gameReducer = (state = REDUX_INITIAL_STATE().game, action) => {
           encoded: encodeState(state.grid)
         });
       }
-      console.log(action);
       return {
         ...state, 
         grid: action.payload.grid, 

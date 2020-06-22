@@ -2,7 +2,6 @@ import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TO
 
 // Game action creators
 export const updateGame = (grid, deltaScore, newTile) => {
-  console.log(grid, deltaScore, newTile);
   return {
     type: UPDATE_GAME,
     payload: {grid, deltaScore, newTile}

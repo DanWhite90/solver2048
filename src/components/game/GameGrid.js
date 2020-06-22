@@ -1,20 +1,21 @@
-import React, { useEffect, useRef } from "react";
+import React, {useEffect} from "react";
 import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
-import {Transition} from "react-transition-group";
 
+import usePrevious from "../../hooks/usePrevious";
 import {LEFT, RIGHT, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE} from "../../globalOptions";
-import {addRandomTile} from "./lib/gameEngine";
+import {addRandomTile, isGameOver} from "./lib/gameEngine";
 import * as actions from "../../actions";
 
 import Tile from "./Tile";
 
 const GameGrid = props => {
   let {animPhase} = props;
+  let prevAnimPhase = usePrevious(animPhase);
 
-  const gridRef = useRef();
+  const animPhaseChanged = () => animPhase !== prevAnimPhase;
 
-  const duration = 1000;
+  const duration = 2000;
   const defaultStyle = {
     opacity: 1,
     transition: `transform ${duration}ms ease-in-out`
@@ -76,28 +77,11 @@ const GameGrid = props => {
             key={j}
             value={background ? "" : col} 
             className={background ? "tile-bg" : "tile"}
-            style={background ? {} : {... defaultStyle, ...computeStyles(col, i, j)[state]}}
+            style={background ? {} : {...defaultStyle, ...computeStyles(col, i, j)[state]}}
           />
         );
       });
     });
-  };
-
-  const renderAnimation = () => {
-    switch (animPhase) {
-      case ANIM_NONE:
-      case ANIM_SLIDE:
-      case ANIM_NEW_TILE:
-        return (
-          <Transition 
-            in={!!animPhase} 
-            timeout={duration} 
-            onEntered={console.log("entered")}
-          >
-            {state => renderGrid(state)}
-          </Transition>
-        );
-    }
   };
 
   // add keyboard listener
@@ -116,22 +100,43 @@ const GameGrid = props => {
   useEffect(() => {
     switch (animPhase) {
       case ANIM_NONE:
+        break;
       case ANIM_SLIDE:
+        if (animPhaseChanged()) {
+          setTimeout(() => {
+            props.updateGame(props.computedGrid, props.computedScore, props.newTile)
+            props.setAnimationPhase(ANIM_NEW_TILE);
+          }, duration);
+        }
+        break;
       case ANIM_NEW_TILE:
-        const {newGrid, newTile} = addRandomTile(props.grid);
-        // shouldn't update here
-        props.updateGame(newGrid, props.computedScore, newTile);
-        props.setAnimationPhase(ANIM_NONE);
+        if (animPhaseChanged()) {
+          const {newGrid, newTile} = addRandomTile(props.grid);
+          if (isGameOver(newGrid)) {
+            console.log("game over");
+            // call termination action creator
+            // show game end modal etc
+          } else {
+            // continue the game
+            // animate new tile in the meanwhile
+            setTimeout(() => {
+              props.updateGame(newGrid, 0, newTile);
+              props.setAnimationPhase(ANIM_NONE);
+            }, duration);
+          }
+        }
+        break;
+      default:
     }
-  }, [animPhase]);
+  });
 
   return (
     <Container className="grid-wrapper">
       <Container className="grid-bg">
         {renderGrid(null, true)}
       </Container>
-      <Container ref={gridRef} className="grid">
-        {renderAnimation()}
+      <Container className="grid">
+        {renderGrid("entered")}
       </Container>
     </Container>
   );

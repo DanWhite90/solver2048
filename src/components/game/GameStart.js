@@ -3,7 +3,6 @@ import {connect} from "react-redux";
 import {Container, Button} from "react-bootstrap";
 
 import * as actions from "../../actions";
-import {addRandomTile} from "./lib/gameEngine";
 
 const GameStart = props => {
 

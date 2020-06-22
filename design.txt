@@ -5,12 +5,12 @@ Gameplay flow:
 - check termination conditions
 - update store with new tile information
 - animate new tile appearance over rendered grid (lock input)
-- exit new tile animation phase to none to unlock input and wait for user input
+- set no animation phase to release lock and wait for user input
 ----------
 - player move - process tiles stacking 
-- trigger slide animation phase
+- set slide animation phase
 - update destinations
 - animate tiles to reach new destination (lock input)
 - callback update score and computedGrid -> grid for next cycle
-- trigger new tile animation phase 
+- set new tile animation phase 
 - repeat
