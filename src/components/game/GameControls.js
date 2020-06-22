@@ -10,7 +10,7 @@ import {UP, LEFT, RIGHT, DOWN} from "../../globalOptions";
 const GameControls = props => {
 
   const handleClick = direction => {
-    // implement handle move
+    props.handleMove(direction, props.grid);
   }
 
   const renderButton = (direction, icon) => {
@@ -47,6 +47,7 @@ const GameControls = props => {
 
 const mapStateToProps = state => {
   return {
+    grid: state.game.grid,
     aiActive: state.game.aiActive
   };
 }

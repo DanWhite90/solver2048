@@ -8,7 +8,7 @@ import GameGrid from "./GameGrid";
 import GameControls from "./GameControls";
 
 import * as actions from "../../actions";
-import {processMove, isNonEmpty} from "./lib/gameEngine";
+import {processMove} from "./lib/gameEngine";
 import {ANIM_SLIDE} from "../../globalOptions";
 
 const duration = 1000;
@@ -31,13 +31,10 @@ const GameWrapper = props => {
     if (!props.animPhase) {
       let {newGrid, deltaScore, destinations} = processMove(direction, grid);
   
-      // check that a valid move has been made or that the game just started
-      if (isNonEmpty(destinations) || !isNonEmpty(newGrid)) {
-        props.storePartialMove(newGrid, deltaScore);
-        props.storeDestinations(direction, destinations);
-        props.setAnimationPhase(ANIM_SLIDE);
-        // props.increaseMoveCount();
-      }
+      props.storePartialMove(newGrid, deltaScore);
+      props.storeDestinations(direction, destinations);
+      props.increaseMoveCount();
+      props.setAnimationPhase(ANIM_SLIDE);
     }
   };
 
