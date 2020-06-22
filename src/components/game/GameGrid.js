@@ -15,61 +15,41 @@ const GameGrid = props => {
 
   const animPhaseChanged = () => animPhase !== prevAnimPhase;
 
-  const duration = 2000;
-  const defaultStyle = {
-    opacity: 1,
-    transition: `transform ${duration}ms ease-in-out`
+  const duration = {
+    [ANIM_SLIDE]: 40,
+    [ANIM_NEW_TILE]: 0
   };
 
+  const defaultStyle = {
+    opacity: 1
+  };
+
+  // temporary minimal animation - UX could be improved
   const computeStyles = (value, i, j) => {
     if (value === 0) {
-      return {
-        "entering": {opacity: 0},
-        "entered": {opacity: 0},
-        "exiting": {opacity: 0},
-        "exited": {opacity: 0}
-      };
+      return {opacity: 0};
     } else {
       switch (animPhase) {
         case ANIM_SLIDE:
           return {
-            "entering": {
-              transform: (props.direction === LEFT || props.direction === RIGHT) ? `translate(${props.destinations[i][j] * 100}% ,0)` : `translate(0, ${props.destinations[i][j] * 100}%)`
-            },
-            "entered": {
-              transform: (props.direction === LEFT || props.direction === RIGHT) ? `translate(${props.destinations[i][j] * 100}% ,0)` : `translate(0, ${props.destinations[i][j] * 100}%)`
-            },
-            "exiting": {},
-            "exited": {}
+            transition: `transform ${duration[animPhase]}ms ease-in-out`,
+            transform: (props.direction === LEFT || props.direction === RIGHT) ? `translate(${props.destinations[i][j] * 100}% ,0)` : `translate(0, ${props.destinations[i][j] * 100}%)`
           };
         case ANIM_NEW_TILE:
-          return {
-            "entering": {
-              transition: `transform ${duration}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity ${duration}ms ease-in-out`,
-              transform: `scale(0.6)`,
-              opacity: 0.6
-            },
-            "entered": {
-              transition: `transform ${duration}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity ${duration}ms ease-in-out`,
-              transform: `scale(1)`,
-              opacity: 1
-            },
-            "exiting": {},
-            "exited": {}
-          };
+          return {};
+          // return {
+          //   transition: `transform ${duration[animPhase]}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity ${duration[animPhase]}ms ease-in-out`,
+          //   transform: `scale(0.6)`,
+          //   opacity: 0.6
+          // };
         case ANIM_NONE:
         default:
-          return {
-            "entering": {},
-            "entered": {},
-            "exiting": {},
-            "exited": {}
-          };
+          return {};
       }
     }
   };
 
-  const renderGrid = (state, background = false) => {
+  const renderGrid = (background = false) => {
     return props.grid.map((row, i) => {
       return row.map((col, j) => {
         return (
@@ -77,7 +57,7 @@ const GameGrid = props => {
             key={j}
             value={background ? "" : col} 
             className={background ? "tile-bg" : "tile"}
-            style={background ? {} : {...defaultStyle, ...computeStyles(col, i, j)[state]}}
+            style={background ? {} : {...defaultStyle, ...computeStyles(col, i, j)}}
           />
         );
       });
@@ -99,33 +79,36 @@ const GameGrid = props => {
   // handle animation logic
   useEffect(() => {
     switch (animPhase) {
+
       case ANIM_NONE:
         break;
+
       case ANIM_SLIDE:
         if (animPhaseChanged()) {
           setTimeout(() => {
             props.updateGame(props.computedGrid, props.computedScore, props.newTile)
             props.setAnimationPhase(ANIM_NEW_TILE);
-          }, duration);
+          }, duration[animPhase]);
         }
         break;
+
       case ANIM_NEW_TILE:
         if (animPhaseChanged()) {
           const {newGrid, newTile} = addRandomTile(props.grid);
           if (isGameOver(newGrid)) {
+            props.updateGame(newGrid, 0, newTile);
             console.log("game over");
             // call termination action creator
-            // show game end modal etc
+            // show game over modal etc
           } else {
-            // continue the game
-            // animate new tile in the meanwhile
             setTimeout(() => {
               props.updateGame(newGrid, 0, newTile);
               props.setAnimationPhase(ANIM_NONE);
-            }, duration);
+            }, duration[animPhase]);
           }
         }
         break;
+        
       default:
     }
   });
@@ -133,10 +116,10 @@ const GameGrid = props => {
   return (
     <Container className="grid-wrapper">
       <Container className="grid-bg">
-        {renderGrid(null, true)}
+        {renderGrid(true)}
       </Container>
       <Container className="grid">
-        {renderGrid("entered")}
+        {renderGrid()}
       </Container>
     </Container>
   );
