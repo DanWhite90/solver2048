@@ -3,7 +3,7 @@ import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
 
 import usePrevious from "../../hooks/usePrevious";
-import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS} from "../../globalOptions";
+import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS, GAME_OVER} from "../../globalOptions";
 import {addRandomTile, isGameOver} from "./lib/gameEngine";
 import * as actions from "../../actions";
 
@@ -138,6 +138,8 @@ const GameGrid = props => {
           const {newGrid, newTile} = addRandomTile(props.grid);
           if (isGameOver(newGrid)) {
             props.updateGame(newGrid, 0, newTile);
+            props.setGameStatus(GAME_OVER);
+            props.setAnimationPhase(ANIM_NONE);
             console.log("game over");
             // call termination action creator
             // show game over modal etc

@@ -1,4 +1,4 @@
-import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE, SET_ANIMATION_PHASE} from "./types";
+import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, SET_GAME_STATUS, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE, SET_ANIMATION_PHASE} from "./types";
 
 // Game action creators
 export const updateGame = (grid, deltaScore, newTile, updateHistory = false) => {
@@ -33,9 +33,10 @@ export const toggleAI = () => {
   };
 }
 
-export const startGame = () => {
+export const setGameStatus = status => {
   return {
-    type: START_GAME
+    type: SET_GAME_STATUS,
+    payload: status
   }
 }
 

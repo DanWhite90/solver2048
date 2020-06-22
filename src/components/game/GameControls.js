@@ -5,7 +5,7 @@ import {faArrowUp, faArrowLeft, faArrowRight, faArrowDown} from '@fortawesome/fr
 import {connect} from "react-redux";
 import * as actions from "../../actions";
 
-import {UP, LEFT, RIGHT, DOWN} from "../../globalOptions";
+import {UP, LEFT, RIGHT, DOWN, GAME_OVER} from "../../globalOptions";
 
 const GameControls = props => {
 
@@ -16,7 +16,7 @@ const GameControls = props => {
   const renderButton = (direction, icon) => {
     return (
       <Col 
-        disabled={props.aiActive ? true : false}
+        disabled={(props.aiActive || props.status === GAME_OVER) ? true : false}
         onClick={() => handleClick(direction)}
         onTouchStart={() => console.log("touched")}
         xs={4} 
@@ -48,7 +48,8 @@ const GameControls = props => {
 const mapStateToProps = state => {
   return {
     grid: state.game.grid,
-    aiActive: state.game.aiActive
+    aiActive: state.game.aiActive,
+    status: state.game.status
   };
 }
 

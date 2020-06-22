@@ -1,4 +1,4 @@
-import {UPDATE_GAME, AI_TOGGLE, RESET_GAME, ROLLBACK_HISTORY, START_GAME, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE} from "../actions/types";
+import {UPDATE_GAME, AI_TOGGLE, RESET_GAME, ROLLBACK_HISTORY, SET_GAME_STATUS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE} from "../actions/types";
 import {REDUX_INITIAL_STATE, GRID_HISTORY_MAX_LENGTH, GAME_STARTED} from "../globalOptions";
 import {encodeState, decodeState} from "../components/game/lib/encoding";
 import {isNonEmpty} from "../components/game/lib/gameEngine";
@@ -40,8 +40,8 @@ const gameReducer = (state = REDUX_INITIAL_STATE().game, action) => {
     case AI_TOGGLE:
       return {...state, aiActive: !state.aiActive};
 
-    case START_GAME:
-      return {...state, status: GAME_STARTED};
+    case SET_GAME_STATUS:
+      return {...state, status: action.payload};
 
     case STORE_PARTIAL_MOVE:
       return {...state, computedGrid: action.payload.computedGrid, computedScore: action.payload.computedScore};

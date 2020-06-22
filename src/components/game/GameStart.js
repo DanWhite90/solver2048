@@ -3,11 +3,12 @@ import {connect} from "react-redux";
 import {Container, Button} from "react-bootstrap";
 
 import * as actions from "../../actions";
+import {GAME_STARTED} from "../../globalOptions";
 
 const GameStart = props => {
 
   const handleClick = () => {
-    props.startGame();
+    props.setGameStatus(GAME_STARTED);
   }
 
   const handleTouch = () => {

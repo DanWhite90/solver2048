@@ -5,6 +5,7 @@ import {faRedoAlt, faBackward, faBrain} from '@fortawesome/free-solid-svg-icons'
 import {connect} from "react-redux";
 
 import * as actions from "../../actions";
+import { GAME_OVER } from "../../globalOptions";
 
 const GameHeader = props => {
 
@@ -27,7 +28,7 @@ const GameHeader = props => {
     <Container className="header">
       <Row className="justify-content-center">
           <Button 
-            disabled={(props.aiActive || props.emptyHistory) ? true : false}
+            disabled={(props.aiActive || props.emptyHistory || props.status === GAME_OVER) ? true : false}
             onClick={handleRollback}
             className="rounded-circle" 
             variant="info"
@@ -35,6 +36,7 @@ const GameHeader = props => {
             <FontAwesomeIcon icon={faBackward} size="lg" />
           </Button>
           <Button 
+            disabled={props.status === GAME_OVER ? true : false}
             onClick={handleAIToggle}
             className="rounded-circle" 
             variant={props.aiActive ? "success" : "danger"}
@@ -61,7 +63,8 @@ const mapStateToProps = state => {
     aiActive: state.game.aiActive,
     emptyHistory: !state.game.gridHistory.length,
     score: state.game.score,
-    grid: state.game.grid
+    grid: state.game.grid,
+    status: state.game.status
   };
 }
 
