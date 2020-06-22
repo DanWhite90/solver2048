@@ -7,10 +7,10 @@ const gameReducer = (state = REDUX_INITIAL_STATE().game, action) => {
   switch (action.type) {
 
     case UPDATE_GAME:
-      if (state.gridHistory.length >= GRID_HISTORY_MAX_LENGTH) {
-        state.gridHistory = state.gridHistory.slice(Math.max(1, state.gridHistory.length - GRID_HISTORY_MAX_LENGTH));
-      }
-      if (isNonEmpty(state.grid)) {
+      if (isNonEmpty(state.grid) && action.updateHistory) {
+        if (state.gridHistory.length >= GRID_HISTORY_MAX_LENGTH) {
+          state.gridHistory = state.gridHistory.slice(Math.max(1, state.gridHistory.length - GRID_HISTORY_MAX_LENGTH));
+        }
         state.gridHistory.push({
           score: state.score,
           encoded: encodeState(state.grid)

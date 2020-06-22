@@ -1,9 +1,9 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useRef} from "react";
 import {Container} from "react-bootstrap";
 import {connect} from "react-redux";
 
 import usePrevious from "../../hooks/usePrevious";
-import {LEFT, RIGHT, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE} from "../../globalOptions";
+import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS} from "../../globalOptions";
 import {addRandomTile, isGameOver} from "./lib/gameEngine";
 import * as actions from "../../actions";
 
@@ -12,6 +12,11 @@ import Tile from "./Tile";
 const GameGrid = props => {
   let {animPhase} = props;
   let prevAnimPhase = usePrevious(animPhase);
+  const touchInfoRef = useRef({
+    touching: false,
+    x: 0,
+    y: 0
+  });
 
   const animPhaseChanged = () => animPhase !== prevAnimPhase;
 
@@ -64,6 +69,42 @@ const GameGrid = props => {
     });
   };
 
+  const handleTouchMoveStart = e => {
+    touchInfoRef.current = {
+      touching: true,
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+
+  const handleTouchMove = e => {
+    const dx = e.touches[0].clientX - touchInfoRef.current.x;
+    const dy = e.touches[0].clientY - touchInfoRef.current.y;
+    const r = Math.sqrt(dx**2 + dy**2);
+    let direction;
+    
+    if (r > TOUCH_SLIDE_MIN_RADIUS) {
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0) {
+          direction = RIGHT;
+        } else {
+          direction = LEFT;
+        }
+      } else {
+        if (dy > 0) {
+          direction = DOWN;
+        } else {
+          direction = UP;
+        }
+      }
+      if (touchInfoRef.current.touching) {
+        props.handleMove(direction, props.grid);
+        touchInfoRef.current.touching = false;
+      }
+    }
+    // call handleMove
+  };
+
   // add keyboard listener
   useEffect(() => {
     const handleKeyboardMove = e => {
@@ -86,7 +127,7 @@ const GameGrid = props => {
       case ANIM_SLIDE:
         if (animPhaseChanged()) {
           setTimeout(() => {
-            props.updateGame(props.computedGrid, props.computedScore, props.newTile)
+            props.updateGame(props.computedGrid, props.computedScore, props.newTile, true)
             props.setAnimationPhase(ANIM_NEW_TILE);
           }, duration[animPhase]);
         }
@@ -118,7 +159,11 @@ const GameGrid = props => {
       <Container className="grid-bg">
         {renderGrid(true)}
       </Container>
-      <Container className="grid">
+      <Container 
+        className="grid" 
+        onTouchStart={handleTouchMoveStart}
+        onTouchMove={handleTouchMove}
+      >
         {renderGrid()}
       </Container>
     </Container>

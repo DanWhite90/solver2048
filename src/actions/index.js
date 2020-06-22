@@ -1,10 +1,11 @@
 import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, START_GAME, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE, SET_ANIMATION_PHASE} from "./types";
 
 // Game action creators
-export const updateGame = (grid, deltaScore, newTile) => {
+export const updateGame = (grid, deltaScore, newTile, updateHistory = false) => {
   return {
     type: UPDATE_GAME,
-    payload: {grid, deltaScore, newTile}
+    payload: {grid, deltaScore, newTile},
+    updateHistory: updateHistory
   };
 };
 

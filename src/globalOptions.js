@@ -20,6 +20,7 @@ export const directions = new Map([
   ["s", DOWN],
 ]);
 export const TILE_2_PROBABILITY = 0.9;
+export const GRID_HISTORY_MAX_LENGTH = 20;
 
 export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_N, m = GAME_GRID_SIZE_M) => {
   let grid = [];
@@ -38,7 +39,7 @@ export const GAME_OVER = 2;
 export const ANIM_NONE = 0;
 export const ANIM_SLIDE = 1;
 export const ANIM_NEW_TILE = 2;
-
+export const TOUCH_SLIDE_MIN_RADIUS = 50;
 
 // Redux store constants
 export const REDUX_INITIAL_STATE = () => ({
@@ -63,5 +64,3 @@ export const REDUX_INITIAL_STATE = () => ({
     animPhase: ANIM_NEW_TILE
   }
 });
-
-export const GRID_HISTORY_MAX_LENGTH = 20;
