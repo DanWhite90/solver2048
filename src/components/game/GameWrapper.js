@@ -50,7 +50,12 @@ const GameWrapper = props => {
           <GameHeader />
           <GameGrid handleMove={handleMove} />
           {!props.isTouchDevice && <GameControls handleMove={handleMove} />}
-          <Modal show={props.status === GAME_OVER} onHide={handleModalClose}>
+          <Modal 
+            show={props.status === GAME_OVER} 
+            onHide={handleModalClose}
+            size="sm"
+            centered
+          >
             <Modal.Header>
               <Modal.Title>Game Over</Modal.Title>
             </Modal.Header>
