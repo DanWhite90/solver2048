@@ -1,5 +1,5 @@
 import React from "react";
-import {Container} from "react-bootstrap";
+import {Container, Modal, Button} from "react-bootstrap";
 import {connect} from "react-redux";
 import {Transition} from "react-transition-group";
 
@@ -9,7 +9,7 @@ import GameControls from "./GameControls";
 
 import * as actions from "../../actions";
 import {processMove, isNonEmpty} from "./lib/gameEngine";
-import {ANIM_SLIDE} from "../../globalOptions";
+import {ANIM_SLIDE, GAME_OVER} from "../../globalOptions";
 
 const duration = 1000;
 const defaultStyle = {
@@ -41,6 +41,8 @@ const GameWrapper = props => {
     }
   };
 
+  const handleModalClose = () => props.resetGame();
+
   return (
     <Transition in={true} timeout={0} appear>
       {state => (
@@ -48,6 +50,14 @@ const GameWrapper = props => {
           <GameHeader />
           <GameGrid handleMove={handleMove} />
           {!props.isTouchDevice && <GameControls handleMove={handleMove} />}
+          <Modal show={props.status === GAME_OVER} onHide={handleModalClose}>
+            <Modal.Header>
+              <Modal.Title>Game Over</Modal.Title>
+            </Modal.Header>
+            <Modal.Footer>
+              <Button onClick={handleModalClose}>Restart</Button>
+            </Modal.Footer>
+          </Modal>
         </Container>
       )}
     </Transition>
@@ -58,6 +68,7 @@ const mapStateToProps = state => {
   return {
     isTouchDevice: state.device.isTouchDevice,
     grid: state.game.grid,
+    status: state.game.status,
     animPhase: state.ui.animPhase
   }
 }
