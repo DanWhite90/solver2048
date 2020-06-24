@@ -51,8 +51,9 @@ const GameHeader = props => {
             <FontAwesomeIcon icon={faRedoAlt} size="lg" />
           </Button>
       </Row>
-      <Row>
-        <Col>Score: {props.score}</Col>
+      <Row className="justify-content-between">
+        <Col xs="auto">Score: {props.score}</Col>
+        <Col xs="auto">Moves: {props.moveCount}</Col>
       </Row>
     </Container>
   );
@@ -64,7 +65,8 @@ const mapStateToProps = state => {
     emptyHistory: !state.game.gridHistory.length,
     score: state.game.score,
     grid: state.game.grid,
-    status: state.game.status
+    status: state.game.status,
+    moveCount: state.game.moveCount
   };
 }
 
