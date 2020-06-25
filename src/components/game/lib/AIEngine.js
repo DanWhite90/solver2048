@@ -1,11 +1,10 @@
-import {TILE_2_PROBABILITY, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, objectiveFunctions, defaultObjFunc} from "../../../globalOptions";
+import {GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, scoringFunctions, defaultScoringFunction} from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid} from "./gameEngine";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
 
-// provides a monotonicity score in the interval [0, 1]
-export const monotonicityScore = (grid, objFunc = objectiveFunctions.get(defaultObjFunc)) => {
+export const monotonicityScore = (grid, scoreFunc = scoringFunctions.get(defaultScoringFunction)) => {
   // number of monotonicity satisfying couples of tiles when you need increasing and decreasing tiles horizontally and vertically respectively
   let incH = 0, decH = 0, incV = 0, decV = 0; 
   let locGrid = copyGrid(grid);
@@ -26,13 +25,13 @@ export const monotonicityScore = (grid, objFunc = objectiveFunctions.get(default
     }
   }
 
-  return objFunc((Math.max(incH, decH) + Math.max(incV, decV) - totalMonotonicityDivisor / 2) / totalMonotonicityDivisor * 2);
+  return scoreFunc((Math.max(incH, decH) + Math.max(incV, decV) - totalMonotonicityDivisor / 2) / totalMonotonicityDivisor * 2);
 }
 
-export const emptinessScore = (grid, objFunc = objectiveFunctions.get(defaultObjFunc)) => {
+export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultScoringFunction)) => {
   let freeFraction = zeroCount(grid) / (totalTiles - 1); // -1 because at least 1 tile is non zero at all times, varies between [0, 1]
 
-  return objFunc(freeFraction);
+  return scoreFunc(freeFraction);
 }
 
 export const computeOptimalMove = grid => {
