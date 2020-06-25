@@ -1,4 +1,4 @@
-import {GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, scoringFunctions, defaultScoringFunction} from "../../../globalOptions";
+import {GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, scoringFunctions, defaultScoringFunction, SCORE_SIGMOID} from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid} from "./gameEngine";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
@@ -34,6 +34,9 @@ export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultSco
   return scoreFunc(freeFraction);
 }
 
-export const computeOptimalMove = grid => {
+// Cobb-Douglas utility with equal weights
+export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_SIGMOID) ** 0.5);
+
+export const computeOptimalMove = (grid, memoPrediction = {}) => {
 
 }
