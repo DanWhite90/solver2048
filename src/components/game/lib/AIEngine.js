@@ -47,7 +47,7 @@ export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1)
 
 // This function should efficiently maintain the prediction subtree with the current state as the root node for computing expectations
 export const generateStateTree = (grid, direction, depth = 6, stateTree = new Map()) => {
-
+  
 }
 
 export const computeOptimalMove = (grid, memoPrediction = {}) => {

@@ -91,5 +91,28 @@ describe("emptinessScore()", () => {
 });
 
 describe("bayesBetaUpdate()", () => {
-  it("updates the probability ")
+  it("updates the probability correctly when the game starts", () => {
+    let inputGrid = [
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,2]
+    ];
+    let moveCount = 0;
+
+    expect(bayesBetaUpdate(inputGrid, moveCount)).toBeCloseTo(2 / 3, 4);
+  });
+  
+  it("calculates the right probability deep within the game", () => {
+    let inputGrid = [
+      [128,4,2,4],
+      [256,8,16,2],
+      [64,2,0,0],
+      [8,0,0,0]
+    ];
+    let moveCount = 220;
+    let result = (1 + 442 - 0.5 * (46 + 64 + 256 + 128)) / 223
+
+    expect(bayesBetaUpdate(inputGrid, moveCount)).toBeCloseTo(result, 2);
+  });
 });
