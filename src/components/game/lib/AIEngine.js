@@ -1,8 +1,14 @@
-import {GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, scoringFunctions, defaultScoringFunction, SCORE_SIGMOID} from "../../../globalOptions";
-import {zeroCount, transpose, copyGrid} from "./gameEngine";
+import {GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, scoringFunctions, defaultScoringFunction, SCORE_SIGMOID, ALPHA, BETA} from "../../../globalOptions";
+import {zeroCount, transpose, copyGrid, gridSum} from "./gameEngine";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
+
+// HELPER FUNCTIONS
+
+//
+
+// AI ENGINE FUNCTIONS
 
 export const monotonicityScore = (grid, scoreFunc = scoringFunctions.get(defaultScoringFunction)) => {
   // number of monotonicity satisfying couples of tiles when you need increasing and decreasing tiles horizontally and vertically respectively
@@ -36,6 +42,13 @@ export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultSco
 
 // Cobb-Douglas utility with equal weights
 export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_SIGMOID) ** 0.5);
+
+export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
+
+// This function should efficiently maintain the prediction subtree with the current state as the root node for computing expectations
+export const generateStateTree = (grid, direction, depth = 6, stateTree = new Map()) => {
+
+}
 
 export const computeOptimalMove = (grid, memoPrediction = {}) => {
 

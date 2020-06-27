@@ -3,6 +3,8 @@ import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY} from "../
 
 // HELPER FUNCTIONS
 
+export const gridSum = grid => grid.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b);
+
 export const copyGrid = (arr = GRID_INITIAL_STATE()) => {
   const newArr = [];
   
@@ -170,7 +172,7 @@ export const addRandomTile = (grid, test = false) => {
 };
 
 // check validity by summing up the destinations - if non-zero, a movement has been made
-export const isNonEmpty = destinations => !!destinations.map(row => row.reduce((a, b) => a + b)).reduce((a, b) => a + b);
+export const isNonEmpty = destinations => !!gridSum(destinations);
 
 export const isGameOver = grid => {
   // process grid to return true

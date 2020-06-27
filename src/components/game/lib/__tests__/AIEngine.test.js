@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore} from "../AIEngine";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate} from "../AIEngine";
 
 describe("monotonicityScore()", () => {
 
@@ -88,4 +88,8 @@ describe("emptinessScore()", () => {
 
     expect(emptinessScore(inputGrid)).toBeCloseTo(result, 4);
   });
+});
+
+describe("bayesBetaUpdate()", () => {
+  it("updates the probability ")
 });

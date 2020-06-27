@@ -1,4 +1,15 @@
-import {UPDATE_GAME, RESET_GAME, AI_TOGGLE, ROLLBACK_HISTORY, SET_GAME_STATUS, SET_TOUCH_STATUS, STORE_DESTINATIONS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE, SET_ANIMATION_PHASE} from "./types";
+import {UPDATE_GAME, 
+  RESET_GAME, 
+  AI_TOGGLE, 
+  ROLLBACK_HISTORY, 
+  SET_GAME_STATUS, 
+  SET_TOUCH_STATUS, 
+  STORE_DESTINATIONS, 
+  INCREASE_MOVE_COUNT, 
+  STORE_PARTIAL_MOVE, 
+  SET_ANIMATION_PHASE,
+  UPDATE_AI_TREE
+} from "./types";
 
 // Game action creators
 export const updateGame = (grid, deltaScore, newTile, updateHistory = false) => {
@@ -67,5 +78,12 @@ export const setAnimationPhase = phase => {
   return {
     type: SET_ANIMATION_PHASE,
     payload: phase
+  };
+}
+
+// AI action creators
+export const updateTreeStatus = () => {
+  return {
+    type: UPDATE_AI_TREE
   };
 }
