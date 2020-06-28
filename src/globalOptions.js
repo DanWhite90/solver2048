@@ -95,3 +95,6 @@ export const scoringFunctions = new Map([
 // Bayesian estimation parameters
 export const ALPHA = 1;
 export const BETA = 1;
+
+// Tree parameters
+export const DEFAULT_TREE_DEPTH = 6;

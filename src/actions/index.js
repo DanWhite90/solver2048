@@ -1,4 +1,5 @@
-import {UPDATE_GAME, 
+import {
+  UPDATE_GAME, 
   RESET_GAME, 
   AI_TOGGLE, 
   ROLLBACK_HISTORY, 

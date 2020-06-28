@@ -1,14 +1,26 @@
-import {GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, scoringFunctions, defaultScoringFunction, SCORE_SIGMOID, ALPHA, BETA} from "../../../globalOptions";
+import {
+  GAME_GRID_SIZE_N, 
+  GAME_GRID_SIZE_M, 
+  scoringFunctions, 
+  defaultScoringFunction, 
+  SCORE_SIGMOID, 
+  ALPHA, 
+  BETA,
+  UP,
+  LEFT,
+  RIGHT,
+  DOWN,
+  DEFAULT_TREE_DEPTH
+} from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum} from "./gameEngine";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
 
 // HELPER FUNCTIONS
+export const hashTile = tile => tile.i * GAME_GRID_SIZE_M + tile.j + (tile.value === 4 ? GAME_GRID_SIZE_N * GAME_GRID_SIZE_M : 0);
 
-//
-
-// AI ENGINE FUNCTIONS
+// AI ENGINE
 
 export const monotonicityScore = (grid, scoreFunc = scoringFunctions.get(defaultScoringFunction)) => {
   // number of monotonicity satisfying couples of tiles when you need increasing and decreasing tiles horizontally and vertically respectively
@@ -45,11 +57,18 @@ export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCOR
 
 export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
 
-// This function should efficiently maintain the prediction subtree with the current state as the root node for computing expectations
-export const generateStateTree = (grid, direction, depth = 6, stateTree = new Map()) => {
-  
-}
+// Game tree manipulation functions
+// Not using classes in order to preserve Redux single source of truth
+export const generateNode = (grid, nextSibling = null) => ({
+  grid,
+  nextMove: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])),
+  nextSibling // used for performance optimization
+});
 
-export const computeOptimalMove = (grid, memoPrediction = {}) => {
-
-}
+export const createTree = grid => {
+  let root = generateNode(grid);
+  return {
+    root,
+    leaves: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])) // represent the leaves that are reachable when you choose your move
+  };
+};
