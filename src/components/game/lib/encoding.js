@@ -56,8 +56,14 @@ export const encodeTile = tile => tile.i * GAME_GRID_SIZE_M + tile.j + (tile.val
 
 export const decodeTile = num => {
   let i, j, value;
+
+  if (num >= GAME_GRID_SIZE_N * GAME_GRID_SIZE_M) {
+    value = 4;
+    num -= GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
+  } else {
+    value = 2;
+  }
   
-  value = num >= GAME_GRID_SIZE_N * GAME_GRID_SIZE_M ? 4 : 2;
   i = Math.floor(num / GAME_GRID_SIZE_M);
   j = num - i * GAME_GRID_SIZE_M;
 

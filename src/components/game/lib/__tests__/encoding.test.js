@@ -1,4 +1,4 @@
-import {encodeState, decodeState, encodeTile} from "../encoding";
+import {encodeState, decodeState, encodeTile, decodeTile} from "../encoding";
 
 it("encodes the grid correctly", () => {
   
@@ -66,5 +66,12 @@ describe("encodeTile()", () => {
     let tile = {i: 2, j: 3, value: 4};
 
     expect(encodeTile(tile)).toEqual(27);
+  });
+});
+
+describe("decodeTile()", () => {
+  it("decodes the given number to the right tile", () => {
+    expect(decodeTile(11)).toEqual({i: 2, j: 3, value: 2});
+    expect(decodeTile(27)).toEqual({i: 2, j: 3, value: 4});
   });
 });
