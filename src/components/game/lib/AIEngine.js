@@ -12,13 +12,11 @@ import {
   DOWN,
   DEFAULT_TREE_DEPTH
 } from "../../../globalOptions";
-import {zeroCount, transpose, copyGrid, gridSum} from "./gameEngine";
+import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
+import {encodeTile} from "./encoding";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
-
-// HELPER FUNCTIONS
-export const hashTile = tile => tile.i * GAME_GRID_SIZE_M + tile.j + (tile.value === 4 ? GAME_GRID_SIZE_N * GAME_GRID_SIZE_M : 0);
 
 // AI ENGINE
 
@@ -57,18 +55,58 @@ export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCOR
 
 export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
 
+///////////////////////////////////////////////////////////////////////////////
 // Game tree manipulation functions
-// Not using classes in order to preserve Redux single source of truth
+// Not using classes in order to preserve Redux single source of truth (class methods can modify state without reducers)
 export const generateNode = (grid, nextSibling = null) => ({
   grid,
-  nextMove: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])),
+  nextMoveState: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])),
   nextSibling // used for performance optimization
 });
 
-export const createTree = grid => {
-  let root = generateNode(grid);
-  return {
-    root,
-    leaves: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])) // represent the leaves that are reachable when you choose your move
-  };
+export const createTree = rootNode => ({
+  root: rootNode,
+  leaves: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()]))
+});
+
+export const growTree = (tree, maxDepth = DEFAULT_TREE_DEPTH) => {
+  if (maxDepth > 0) {
+    let tempGrid;
+    let newNode;
+
+    for (let direction of [UP, LEFT, RIGHT, DOWN]) {
+      let computedGrid = processMove(direction, tree.root.grid).newGrid;
+      let numBranches = tree.root.nextMoveState.get(direction).size;
+      let prevSibling = null;
+
+      for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
+        for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
+          if (computedGrid[i][j] === 0) {
+            for (let value of [2, 4]) {
+              if (numBranches === 0) {
+                tempGrid = copyGrid(computedGrid);
+                tempGrid[i][j] = value;
+
+                newNode = generateNode(tempGrid);
+                tree.root.nextMoveState.get(direction).set(encodeTile({i, j, value}), newNode);
+
+                growTree(createTree(newNode), maxDepth - 1);
+
+                prevSibling.nextSibling = newNode;
+                prevSibling = newNode;
+              } else {
+                growTree(createTree(tree.root.nextMoveState.get(direction).get(encodeTile({i, j, value}))), maxDepth - 1);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+export const pruneTree = (tree, direction, newTile) => {
+  tree.root = tree.root.nextMoveState.get(direction).get(encodeTile(newTile));
+  tree.root.nextSibling = null;
+  return tree;
 };

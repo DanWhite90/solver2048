@@ -1,4 +1,4 @@
-import {encodeState, decodeState} from "../encoding";
+import {encodeState, decodeState, encodeTile} from "../encoding";
 
 it("encodes the grid correctly", () => {
   
@@ -53,4 +53,18 @@ it("makes encoding and decoding inverses of each other", () => {
 
   expect(JSON.stringify(decodeState(encodeState(grid)))).toEqual(JSON.stringify(grid));
   expect(JSON.stringify(encodeState(decodeState(encoded)))).toEqual(JSON.stringify(encoded));
+});
+
+describe("encodeTile()", () => {
+  it("calculates the right hash for a 2-tile", () => {
+    let tile = {i: 2, j: 3, value: 2};
+
+    expect(encodeTile(tile)).toEqual(11);
+  });
+  
+  it("calculates the right hash for a 4-tile", () => {
+    let tile = {i: 2, j: 3, value: 4};
+
+    expect(encodeTile(tile)).toEqual(27);
+  });
 });

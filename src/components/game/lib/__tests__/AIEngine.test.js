@@ -1,19 +1,5 @@
 import {scoringFunctions, defaultScoringFunction} from "../../../../globalOptions";
-import {hashTile, monotonicityScore, emptinessScore, bayesBetaUpdate} from "../AIEngine";
-
-describe("hashTile()", () => {
-  it("calculates the right hash for a 2-tile", () => {
-    let tile = {i: 2, j: 3, value: 2};
-
-    expect(hashTile(tile)).toEqual(11);
-  });
-  
-  it("calculates the right hash for a 4-tile", () => {
-    let tile = {i: 2, j: 3, value: 4};
-
-    expect(hashTile(tile)).toEqual(27);
-  });
-});
+import {monotonicityScore, emptinessScore, bayesBetaUpdate} from "../AIEngine";
 
 describe("monotonicityScore()", () => {
 

@@ -1,4 +1,4 @@
-import {GRID_INITIAL_STATE, ENCODING_BITS} from "../../../globalOptions";
+import {GRID_INITIAL_STATE, ENCODING_BITS, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} from "../../../globalOptions";
 
 // These methods allow to compress the state of the game for memory efficiency, primarily to keep a history of the moves performed.
 
@@ -51,3 +51,15 @@ export function decodeState(encoded) {
 
   return grid;
 }
+
+export const encodeTile = tile => tile.i * GAME_GRID_SIZE_M + tile.j + (tile.value === 4 ? GAME_GRID_SIZE_N * GAME_GRID_SIZE_M : 0);
+
+export const decodeTile = num => {
+  let i, j, value;
+  
+  value = num >= GAME_GRID_SIZE_N * GAME_GRID_SIZE_M ? 4 : 2;
+  i = Math.floor(num / GAME_GRID_SIZE_M);
+  j = num - i * GAME_GRID_SIZE_M;
+
+  return {i, j, value};
+};
