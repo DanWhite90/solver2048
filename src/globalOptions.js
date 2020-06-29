@@ -92,8 +92,8 @@ export const scoringFunctions = new Map([
   [SCORE_SIGMOID, x => 1 / (1 + Math.exp(-8 * (x - 0.5)))] // significant variation only in [0.2, 0.8]
 ]);
 
-// Bayesian estimation parameters
-export const ALPHA = 1;
+// Bayesian estimation hyper-parameters
+export const ALPHA = 9;
 export const BETA = 1;
 
 // Tree parameters

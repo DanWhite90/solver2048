@@ -13,7 +13,7 @@ import {
   DEFAULT_TREE_DEPTH
 } from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
-import {encodeTile} from "./encoding";
+import {encodeTile, encodeState, decodeState} from "./encoding";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
@@ -58,8 +58,9 @@ export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1)
 ///////////////////////////////////////////////////////////////////////////////
 // Game tree manipulation functions
 // Not using classes in order to preserve Redux single source of truth (class methods can modify state without reducers)
-export const generateNode = (grid, nextSibling = null) => ({
-  grid,
+export const generateNode = (grid, newTile, nextSibling = null) => ({
+  grid: encodeState(grid),
+  newTile,
   nextMoveState: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])),
   nextSibling // used for performance optimization
 });
@@ -75,7 +76,7 @@ export const growTree = (tree, maxDepth = DEFAULT_TREE_DEPTH) => {
     let newNode;
 
     for (let direction of [UP, LEFT, RIGHT, DOWN]) {
-      let computedGrid = processMove(direction, tree.root.grid).newGrid;
+      let computedGrid = processMove(direction, decodeState(tree.root.grid)).newGrid;
       let numBranches = tree.root.nextMoveState.get(direction).size;
       let prevSibling = null;
 
@@ -87,12 +88,14 @@ export const growTree = (tree, maxDepth = DEFAULT_TREE_DEPTH) => {
                 tempGrid = copyGrid(computedGrid);
                 tempGrid[i][j] = value;
 
-                newNode = generateNode(tempGrid);
+                newNode = generateNode(tempGrid, {i, j, value});
                 tree.root.nextMoveState.get(direction).set(encodeTile({i, j, value}), newNode);
 
                 growTree(createTree(newNode), maxDepth - 1);
 
-                prevSibling.nextSibling = newNode;
+                if (prevSibling) {
+                  prevSibling.nextSibling = newNode;
+                }
                 prevSibling = newNode;
               } else {
                 growTree(createTree(tree.root.nextMoveState.get(direction).get(encodeTile({i, j, value}))), maxDepth - 1);
@@ -104,6 +107,57 @@ export const growTree = (tree, maxDepth = DEFAULT_TREE_DEPTH) => {
     }
   }
 }
+
+
+// export const generateNode = (grid, newTile, nextSibling = null) => ({
+//   grid: encodeState(grid),
+//   newTile,
+//   nextMoveState: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()])),
+//   nextSibling // used for performance optimization
+// });
+
+// export const createTree = rootNode => ({
+//   root: rootNode,
+//   leaves: new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, new Map()]))
+// });
+
+// export const growTree = (tree, maxDepth = DEFAULT_TREE_DEPTH) => {
+//   if (maxDepth > 0) {
+//     let tempGrid;
+//     let newNode;
+
+//     for (let direction of [UP, LEFT, RIGHT, DOWN]) {
+//       let computedGrid = processMove(direction, decodeState(tree.root.grid)).newGrid;
+//       let numBranches = tree.root.nextMoveState.get(direction).size;
+//       let prevSibling = null;
+
+//       for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
+//         for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
+//           if (computedGrid[i][j] === 0) {
+//             for (let value of [2, 4]) {
+//               if (numBranches === 0) {
+//                 tempGrid = copyGrid(computedGrid);
+//                 tempGrid[i][j] = value;
+
+//                 newNode = generateNode(tempGrid, {i, j, value});
+//                 tree.root.nextMoveState.get(direction).set(encodeTile({i, j, value}), newNode);
+
+//                 growTree(createTree(newNode), maxDepth - 1);
+
+//                 if (prevSibling) {
+//                   prevSibling.nextSibling = newNode;
+//                 }
+//                 prevSibling = newNode;
+//               } else {
+//                 growTree(createTree(tree.root.nextMoveState.get(direction).get(encodeTile({i, j, value}))), maxDepth - 1);
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// }
 
 export const pruneTree = (tree, direction, newTile) => {
   tree.root = tree.root.nextMoveState.get(direction).get(encodeTile(newTile));
