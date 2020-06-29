@@ -1,4 +1,5 @@
-import {encodeState, decodeState, encodeTile, decodeTile} from "../encoding";
+import {encodeState, decodeState, encodeTile, decodeTile, encodeRow, decodeRow} from "../encoding";
+import { ENCODING_BITS } from "../../../../globalOptions";
 
 it("encodes the grid correctly", () => {
   
@@ -73,5 +74,51 @@ describe("decodeTile()", () => {
   it("decodes the given number to the right tile", () => {
     expect(decodeTile(11)).toEqual({i: 2, j: 3, value: 2});
     expect(decodeTile(27)).toEqual({i: 2, j: 3, value: 4});
+  });
+});
+
+describe("encodeRow()", () => {
+  it("encodes an empty row properly", () => {
+    let row = [0,0,0,0];
+    let result = 0;
+
+    expect(encodeRow(row)).toEqual(result);
+  });
+
+  it("encodes a random row properly", () => {
+    let row = [2,8,2,16];
+    let result = 1*2**(0*ENCODING_BITS) + 3*2**(1*ENCODING_BITS) + 1*2**(2*ENCODING_BITS) + 4*2**(3*ENCODING_BITS);
+
+    expect(encodeRow(row)).toEqual(result);
+  });
+
+  it("encodes a big row properly", () => {
+    let row = [65536,65536,65536,65536];
+    let result = 16*2**(0*ENCODING_BITS) + 16*2**(1*ENCODING_BITS) + 16*2**(2*ENCODING_BITS) + 16*2**(3*ENCODING_BITS);
+
+    expect(encodeRow(row)).toEqual(result);
+  });
+});
+
+describe("decodeRow()", () => {
+  it("decodes an empty row properly", () => {
+    let num = 0;
+    let result = [0,0,0,0];
+
+    expect(decodeRow(num)).toEqual(result);
+  });
+
+  it("decodes a random row properly", () => {
+    let num = 1*2**(0*ENCODING_BITS) + 3*2**(1*ENCODING_BITS) + 1*2**(2*ENCODING_BITS) + 4*2**(3*ENCODING_BITS);
+    let result = [2,8,2,16];
+
+    expect(decodeRow(num)).toEqual(result);
+  });
+
+  it("decodes a big row properly", () => {
+    let num = 16*2**(0*ENCODING_BITS) + 16*2**(1*ENCODING_BITS) + 16*2**(2*ENCODING_BITS) + 16*2**(3*ENCODING_BITS);
+    let result = [65536,65536,65536,65536];
+
+    expect(decodeRow(num)).toEqual(result);
   });
 });

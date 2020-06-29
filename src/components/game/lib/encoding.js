@@ -4,8 +4,6 @@ import {GRID_INITIAL_STATE, ENCODING_BITS, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} f
 
 export function encodeState(grid) {
   // encode exponents of tiles for 2**80 possible states achievable with 5 a minimum of bits
-  // I'll encode it in 6 bits per tile for convenience since 12 bytes are "required" anyway
-  // I aknowledge that it can be stored in 10 bytes but at a cost of additional complexity
   // so 12 bytes in an unsigned 32 bits integer array on length 3
   let encoded = new Uint32Array(new ArrayBuffer(12));
   let count = 0;
@@ -68,4 +66,33 @@ export const decodeTile = num => {
   j = num - i * GAME_GRID_SIZE_M;
 
   return {i, j, value};
+};
+
+export const encodeRow = row => {
+  let num = 0;
+  let count = 0;
+
+  for (let tile of row) {
+    if (tile !== 0) {
+      num += Math.log2(tile) * 2**(ENCODING_BITS*count);
+    }
+    count++;
+  }
+
+  return num;
+};
+
+export const decodeRow = num => {
+  let row = [0,0,0,0];
+  let tile = 0;
+
+  for (let i = 0; i < row.length; i++) {
+    tile = 2**(num % 2**ENCODING_BITS);
+    num = num >> ENCODING_BITS;
+    if (tile > 1) {
+      row[i] = tile;
+    }
+  }
+
+  return row;
 };
