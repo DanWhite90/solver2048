@@ -17,8 +17,14 @@ impl StackResult {
     }
   }
 
+  #[allow(dead_code)]
   pub fn format_js(&self) -> String {
     format!("[{}, {{newRow: {}, ds: {}, destRow: {:?}}}],\n", self.encoded_row, self.encoded_new_row, self.delta_score, self.dest_row)
+  }
+
+  #[allow(dead_code)]
+  pub fn format_js_array(&self) -> String {
+    format!("[{}, [{}, {}, {:?}]],\n", self.encoded_row, self.encoded_new_row, self.delta_score, self.dest_row)
   }
 }
 

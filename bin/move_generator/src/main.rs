@@ -12,15 +12,6 @@ const LARGEST_TILE: u32 = 65536;
 fn main() {
   println!("This is the moves generator!");
 
-  let row = vec![8,4,2,0];
-  println!("calling encode({:?}): {}", row, encoding::encode_row(&row));
-
-  let num = 541200;
-  println!("calling decode({}): {:?}", num, encoding::decode_row(541200));
-
-  let res = game_engine::stack_left(&vec![8, 0, 2, 2]);
-  println!("Result from stacking: \n{}", res.format_js());
-
   generate_moves();
 }
 
@@ -69,17 +60,19 @@ fn generate_moves(){
     } else {
       // println!("{:?} - {}", row, position);
       let res = game_engine::stack_left(row);
-      file.write(res.format_js().as_bytes()).expect("Error in writing record!");
+      if res.encoded_row != res.encoded_new_row {
+        file.write(res.format_js_array().as_bytes()).expect("Error in writing record!");
+      }
     }
   }
 
   // Header 
-  file.write("export const precomputedMoves = new Map([\n".as_bytes()).expect("Error in writing header!");
+  file.write("
+// contains only valid left stacking single row moves, all the others can be derived from these
+// the key in Map is the current encoded row, the value is an array with [new_encoded_row, score, destination_array]
+export const precomputedMoves = new Map([\n".as_bytes()).expect("Error in writing header!");
 
   //Generate moves
-  let res = game_engine::stack_left(&vec![8, 0, 2, 2]);
-  file.write(res.format_js().as_bytes()).expect("Error writing record!");
-  
   traverse_row(&vec![0, 0, 0, 0], 0, &mut file);
 
   // Footer

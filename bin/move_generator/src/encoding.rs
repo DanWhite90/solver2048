@@ -1,5 +1,6 @@
 const ENCODING_BITS: u32 = 5;
 
+#[allow(dead_code)]
 pub fn encode_row(row: &[u32]) -> u32 {
   let mut num = 0;
   let mut count = 0;
@@ -13,6 +14,7 @@ pub fn encode_row(row: &[u32]) -> u32 {
   num
 }
 
+#[allow(dead_code)]
 pub fn decode_row(mut num: u32) -> [u32; 4] {
   let mut row = [0, 0, 0, 0];
   let mut tile;

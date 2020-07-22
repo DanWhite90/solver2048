@@ -1,4 +1,6 @@
 import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY} from "../../../globalOptions";
+import {precomputedMoves} from "./precomputedMoves";
+import {encodeRow, decodeRow} from "./encoding";
 
 
 // HELPER FUNCTIONS
@@ -110,6 +112,37 @@ export const stackLeft = grid => {
 
 // GAME ENGINE FUNCTIONS
 
+// Old definition of process move without precomputed moves
+// export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
+//   let newGrid, deltaScore, destinations;
+
+//   switch (direction) {
+//     case UP:
+//       newGrid = transpose(grid);
+//       ({newGrid, deltaScore, destinations} = stackLeft(newGrid));
+//       newGrid = transpose(newGrid);
+//       destinations = transpose(destinations);
+//       break;
+//     case RIGHT:
+//       newGrid = reverse(grid);
+//       ({newGrid, deltaScore, destinations} = stackLeft(newGrid));
+//       newGrid = reverse(newGrid);
+//       destinations = changeSign(reverse(destinations));
+//       break;
+//     case DOWN:
+//       newGrid = reverse(transpose(grid));
+//       ({newGrid, deltaScore, destinations} = stackLeft(newGrid));
+//       newGrid = transpose(reverse(newGrid));
+//       destinations = changeSign(transpose(reverse(destinations)));
+//       break;
+//     default:
+//       ({newGrid, deltaScore, destinations} = stackLeft(grid));
+//   }
+
+//   return {newGrid, deltaScore, destinations};
+// };
+
+// New definition of process move with precomputed moves
 export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   let newGrid, deltaScore, destinations;
 
