@@ -9,6 +9,8 @@ export const UP = "UP";
 export const LEFT = "LEFT";
 export const RIGHT = "RIGHT";
 export const DOWN = "DOWN";
+export const ROW = "ROW";
+export const COLUMN = "COLUMN";
 export const directions = new Map([
   ["ArrowUp", UP],
   ["ArrowLeft", LEFT],

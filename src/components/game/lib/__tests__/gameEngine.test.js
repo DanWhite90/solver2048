@@ -1,5 +1,5 @@
-import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, isGameOver, addRandomTile, isNonEmpty} from "../gameEngine";
-import {UP, LEFT, RIGHT, DOWN} from "../../../../globalOptions";
+import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, isGameOver, addRandomTile, isNonEmpty, getArray, setArray} from "../gameEngine";
+import {UP, LEFT, RIGHT, DOWN, ROW, COLUMN, GRID_INITIAL_STATE} from "../../../../globalOptions";
 
 describe("transpose()", () => {
   it("transposes an nxm array correctly and return a copy", () => {
@@ -45,6 +45,88 @@ describe("copyGrid()", () => {
     const expected = [[0,1,-2],[1,0,-1]]; 
 
     expect(JSON.stringify(inputArray)).toEqual(JSON.stringify(expected));
+  });
+});
+
+describe("getArray()", () => {
+  const inputGrid = [
+    [1,2,3,4],
+    [5,6,7,8],
+    [9,10,11,12],
+    [13,14,15,16]
+  ];
+
+  it("gets a row correctly", () => {
+    expect(getArray(inputGrid, 2, ROW, false)).toEqual([9,10,11,12]);
+  });
+
+  it("gets a reverse row correctly", () => {
+    expect(getArray(inputGrid, 1, ROW, true)).toEqual([8,7,6,5]);
+  });
+
+  it("gets a column correctly", () => {
+    expect(getArray(inputGrid, 2, COLUMN, false)).toEqual([3,7,11,15]);
+  });
+
+  it("gets a reverse column correctly", () => {
+    expect(getArray(inputGrid, 0, COLUMN, true)).toEqual([13,9,5,1]);
+  });
+});
+
+describe("setArray()", () => {
+  let inputGrid;
+  const inputArray = [1,2,3,4];
+
+  beforeEach(() => {
+    inputGrid = GRID_INITIAL_STATE();
+  });
+
+  it("sets a row correctly", () => {
+    let result = setArray(inputArray, inputGrid, 1, ROW, false);
+    let expected = [
+      [0,0,0,0],
+      [1,2,3,4],
+      [0,0,0,0],
+      [0,0,0,0]
+    ];
+
+    expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
+  });
+
+  it("sets a reverse row correctly", () => {
+    let result = setArray(inputArray, inputGrid, 2, ROW, true);
+    let expected = [
+      [0,0,0,0],
+      [0,0,0,0],
+      [4,3,2,1],
+      [0,0,0,0]
+    ];
+
+    expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
+  });
+
+  it("sets a column correctly", () => {
+    let result = setArray(inputArray, inputGrid, 3, COLUMN, false);
+    let expected = [
+      [0,0,0,1],
+      [0,0,0,2],
+      [0,0,0,3],
+      [0,0,0,4]
+    ];
+
+    expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
+  });
+
+  it("sets a reverse column correctly", () => {
+    let result = setArray(inputArray, inputGrid, 0, COLUMN, true);
+    let expected = [
+      [4,0,0,0],
+      [3,0,0,0],
+      [2,0,0,0],
+      [1,0,0,0]
+    ];
+
+    expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
   });
 });
 

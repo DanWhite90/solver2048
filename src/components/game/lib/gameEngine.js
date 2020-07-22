@@ -1,4 +1,4 @@
-import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY} from "../../../globalOptions";
+import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY, ROW, COLUMN, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} from "../../../globalOptions";
 import {precomputedMoves} from "./precomputedMoves";
 import {encodeRow, decodeRow} from "./encoding";
 
@@ -142,31 +142,81 @@ export const stackLeft = grid => {
 //   return {newGrid, deltaScore, destinations};
 // };
 
+
+// NEW HELPER FUNCTIONS FOR ROWS
+export const getArray = (grid = GRID_INITIAL_STATE(), i = 0, type = ROW, reverse = false) => {
+  if (type === ROW) {
+    return reverse ? grid[i].slice(0).reverse() : grid[i].slice(0);
+  } else {
+    let newRow = [];
+    if (reverse) {
+      for (let k = GAME_GRID_SIZE_N - 1; k >= 0; k--) {
+        newRow.push(grid[k][i]);
+      }
+    } else {
+      for (let k = 0; k < GAME_GRID_SIZE_N; k++) {
+        newRow.push(grid[k][i]);
+      }
+    }
+    return newRow;
+  }
+};
+
+export const setArray = (arr, grid, i = 0, type = ROW, reverse = false) => {
+  if (type === ROW) {
+    grid[i] = reverse ? arr.slice(0).reverse() : arr.slice(0);
+  } else {
+    if (reverse) {
+      for (let k = 0; k < GAME_GRID_SIZE_N; k++) {
+        grid[k][i] = arr[GAME_GRID_SIZE_N - 1 - k];
+      }
+    } else {
+      for (let k = 0; k < GAME_GRID_SIZE_N; k++) {
+        grid[k][i] = arr[k];
+      }
+    }
+  }
+  return grid;
+}
+
 // New definition of process move with precomputed moves
 export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
-  let newGrid, deltaScore, destinations;
+  let newGrid = copyGrid(grid); 
+  let deltaScore = 0; 
+  let destinations = GRID_INITIAL_STATE();
+  let arr, encArr, newArr, scoreArr, destArr;
+  let type, reverse, trasformDest = () => {};
 
   switch (direction) {
     case UP:
-      newGrid = transpose(grid);
-      ({newGrid, deltaScore, destinations} = stackLeft(newGrid));
-      newGrid = transpose(newGrid);
-      destinations = transpose(destinations);
+      ([type, reverse] = [COLUMN, false]);
       break;
     case RIGHT:
-      newGrid = reverse(grid);
-      ({newGrid, deltaScore, destinations} = stackLeft(newGrid));
-      newGrid = reverse(newGrid);
-      destinations = changeSign(reverse(destinations));
+      ([type, reverse] = [ROW, true]);
       break;
     case DOWN:
-      newGrid = reverse(transpose(grid));
-      ({newGrid, deltaScore, destinations} = stackLeft(newGrid));
-      newGrid = transpose(reverse(newGrid));
-      destinations = changeSign(transpose(reverse(destinations)));
+      ([type, reverse] = [COLUMN, true]);
       break;
     default:
-      ({newGrid, deltaScore, destinations} = stackLeft(grid));
+      ([type, reverse] = [ROW, false]);
+  }
+
+  let n = type === ROW ? GAME_GRID_SIZE_N : GAME_GRID_SIZE_M;
+  for (let k = 0; k < n; k++) {
+    arr = getArray(grid, k, type, reverse);
+    encArr = encodeRow(arr);
+    if (precomputedMoves.has(encArr)) {
+      ([newArr, scoreArr, destArr] = precomputedMoves.get(encArr));
+      newArr = decodeRow(newArr);
+    } else {
+      ([newArr, scoreArr, destArr] = [arr, 0, [0, 0, 0, 0]]);
+    }
+    newGrid = setArray(newArr, newGrid, k, type, reverse);
+    deltaScore += scoreArr;
+    destinations = setArray(destArr, destinations, k, type, reverse);
+  }
+  if (reverse) {
+    destinations = changeSign(destinations);
   }
 
   return {newGrid, deltaScore, destinations};
