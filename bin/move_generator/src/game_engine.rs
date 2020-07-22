@@ -1,6 +1,6 @@
 use crate::encoding;
 
-struct StackResult {
+pub struct StackResult {
   pub encoded_row: u32,
   pub encoded_new_row: u32,
   pub delta_score: u32,
@@ -18,11 +18,11 @@ impl StackResult {
   }
 
   pub fn format_js(&self) -> String {
-    format!("[{}, {{new_row: {}, ds: {}, dest: {:?}}}]", self.encoded_row, self.encoded_new_row, self.delta_score, self.dest_row)
+    format!("[{}, {{newRow: {}, ds: {}, destRow: {:?}}}],\n", self.encoded_row, self.encoded_new_row, self.delta_score, self.dest_row)
   }
 }
 
-fn stack_left(row: &Vec<u32>) -> StackResult {
+pub fn stack_left(row: &Vec<u32>) -> StackResult {
   let mut new_row: Vec<u32> = vec![0; 4];
   let mut dest_row: Vec<i8> = vec![0; 4];
   let mut delta_score = 0;
