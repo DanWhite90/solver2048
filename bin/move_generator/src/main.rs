@@ -74,7 +74,7 @@ fn generate_moves(){
   }
 
   // Header 
-  file.write("const precomputedMoves = new Map([\n".as_bytes()).expect("Error in writing header!");
+  file.write("export const precomputedMoves = new Map([\n".as_bytes()).expect("Error in writing header!");
 
   //Generate moves
   let res = game_engine::stack_left(&vec![8, 0, 2, 2]);

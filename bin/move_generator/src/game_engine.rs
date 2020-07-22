@@ -53,6 +53,7 @@ pub fn stack_left(row: &Vec<u32>) -> StackResult {
 
 #[cfg(test)]
 mod tests {
+  // Test stacking
   #[test]
   fn stacks_empty_correctly() {
     let res = super::stack_left(&vec![0, 0, 0, 0]);
@@ -69,8 +70,52 @@ mod tests {
   
   #[test]
   fn stacks_corner_correctly() {
-    let res = super::stack_left(&vec![8, 0, 2, 2]);
+    let res = super::stack_left(&vec![2, 2, 2, 2]);
 
-    assert_eq!(res.encoded_new_row, super::encoding::encode_row(&vec![8, 4, 0, 0]));
+    assert_eq!(res.encoded_new_row, super::encoding::encode_row(&vec![4, 4, 0, 0]));
+  }
+
+  // Test scoring
+  #[test]
+  fn computes_null_score_correctly() {
+    let res = super::stack_left(&vec![8, 4, 2, 0]);
+
+    assert_eq!(res.delta_score, 0);
+  }
+
+  #[test]
+  fn computes_corner_score_correctly() {
+    let res = super::stack_left(&vec![4, 4, 4, 4]);
+
+    assert_eq!(res.delta_score, 16);
+  }
+
+  #[test]
+  fn computes_large_score_correctly() {
+    let res = super::stack_left(&vec![32768, 32768, 2, 2]);
+
+    assert_eq!(res.delta_score, 65540);
+  }
+
+  // Test moving
+  #[test]
+  fn computes_null_movement_correctly() {
+    let res = super::stack_left(&vec![8, 4, 2, 0]);
+
+    assert_eq!(res.dest_row, vec![0, 0, 0, 0]);
+  }
+
+  #[test]
+  fn computes_corner_movement_correctly() {
+    let res = super::stack_left(&vec![4, 4, 4, 4]);
+
+    assert_eq!(res.dest_row, vec![0, -1, -1, -2]);
+  }
+
+  #[test]
+  fn computes_sparse_movement_correctly() {
+    let res = super::stack_left(&vec![4, 0, 2, 2]);
+
+    assert_eq!(res.dest_row, vec![0, 0, -1, -2]);
   }
 }
