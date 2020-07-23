@@ -10,7 +10,8 @@ import {
   LEFT,
   RIGHT,
   DOWN,
-  DEFAULT_TREE_DEPTH
+  DEFAULT_TREE_DEPTH,
+  FORECAST_TREE_SIZE_THRESHOLD
 } from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
 import {encodeState, decodeState} from "./encoding";
@@ -68,6 +69,7 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   let curNode;
 
   let queue = nodes;
+  let curDepth = nodes[0].originatingPath.length;
 
   while (queue.length) {
     curNode = queue.shift();
@@ -84,13 +86,16 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
                 tempGrid[i][j] = value;
   
                 let newNode = generateForecastNode(tempGrid, [...curNode.originatingPath, direction]);
-  
-                if (newNode.originatingPath.length <= maxDepth) {
-                  queue.push(newNode);
-                } else {
+
+                // when a new node reaches a new depth, stop if the number of leaves has reached a certain threshold or depth reached a certain level
+                if (curDepth !== newNode.originatingPath.length && (queue.length > FORECAST_TREE_SIZE_THRESHOLD || newNode.originatingPath.length > maxDepth)) {
                   queue.unshift(curNode);
                   return queue;
+                } else {
+                  queue.push(newNode);
                 }
+                
+                curDepth = newNode.originatingPath.length;
               }
             }
           }

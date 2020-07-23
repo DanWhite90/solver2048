@@ -194,4 +194,13 @@ describe("generateForecasts()", () => {
       expect(JSON.stringify(result[k])).toEqual(JSON.stringify(newNodes[k]));
     }
   });
+
+  it("generates only nodes at the same max depth", () => {
+    let result = generateForecasts([generateForecastNode(grid)]);
+    let depth = result[0].originatingPath.length;
+
+    for (let node of result) {
+      expect(node.originatingPath.length).toEqual(depth);
+    }
+  });
 });

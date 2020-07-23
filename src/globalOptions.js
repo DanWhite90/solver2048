@@ -99,4 +99,5 @@ export const ALPHA = 9;
 export const BETA = 1;
 
 // Tree parameters
-export const DEFAULT_TREE_DEPTH = 6;
+export const DEFAULT_TREE_DEPTH = 10;
+export const FORECAST_TREE_SIZE_THRESHOLD = 1000;
