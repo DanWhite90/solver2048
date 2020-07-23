@@ -83,8 +83,8 @@ export const defaultScoringFunction = SCORE_LINEAR;
 // scoring functions with following properties:
 // - domain [0, 1]
 // - monotonically increasing
-// - f(0) = 0 (or close from above)
-// - f(1) = 1 (or close from below)
+// - lim x -> 0+ of f(x) = 0
+// - lim x -> 1- of f(x) = 1
 export const scoringFunctions = new Map([
   [SCORE_LINEAR, x => x],
   [SCORE_POWER, x => x ** 0.3], // very sensitive (fast growth) close to 0 but slow after

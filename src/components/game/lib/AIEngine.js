@@ -59,8 +59,9 @@ export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1)
 ///////////////////////////////////////////////////////////////////////////////
 // Game tree manipulation functions
 // Not using classes in order to preserve Redux single source of truth (class methods can modify state without reducers)
-export const generateForecastNode = (grid, originatingPath = []) => ({
+export const generateForecastNode = (grid, tile = 0, originatingPath = []) => ({
   grid: encodeState(grid),
+  tile,
   originatingPath
 });
 
@@ -68,7 +69,7 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   let tempGrid;
   let curNode;
 
-  let queue = nodes;
+  let queue = nodes.slice(0);
   let curDepth = nodes[0].originatingPath.length;
 
   while (queue.length) {
@@ -85,7 +86,7 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
                 tempGrid = copyGrid(computedGrid);
                 tempGrid[i][j] = value;
   
-                let newNode = generateForecastNode(tempGrid, [...curNode.originatingPath, direction]);
+                let newNode = generateForecastNode(tempGrid, value, [...curNode.originatingPath, direction]);
 
                 // when a new node reaches a new depth, stop if the number of leaves has reached a certain threshold or depth reached a certain level
                 if (curDepth !== newNode.originatingPath.length && (queue.length > FORECAST_TREE_SIZE_THRESHOLD || newNode.originatingPath.length > maxDepth)) {
@@ -94,7 +95,7 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
                 } else {
                   queue.push(newNode);
                 }
-                
+
                 curDepth = newNode.originatingPath.length;
               }
             }
@@ -102,5 +103,13 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
         }
       }
     }
+  }
+
+  if (maxDepth > 0) {
+    // if the queue gets emptied before returning it means that maxDepth step ahead had only game-over states so retries with less depth
+    return generateForecasts(nodes, maxDepth - 1);
+  } else {
+    // game over
+    return [];
   }
 }

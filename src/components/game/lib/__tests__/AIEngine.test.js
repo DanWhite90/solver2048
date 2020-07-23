@@ -143,49 +143,49 @@ describe("generateForecasts()", () => {
         [4,2,64,128],
         [2,64,4,2],
         [0,2,16,8]
-      ], [UP]),
+      ], 2, [UP]),
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [4,64,4,2],
         [0,2,16,8]
-      ], [UP]),
+      ], 4, [UP]),
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [0,64,4,2],
         [2,2,16,8]
-      ], [UP]),
+      ], 2, [UP]),
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [0,64,4,2],
         [4,2,16,8]
-      ], [UP]),
+      ], 4, [UP]),
       generateForecastNode([
         [8,4,2,2],
         [2,64,128,0],
         [8,64,4,2],
         [4,2,16,8]
-      ], [LEFT]),
+      ], 2, [LEFT]),
       generateForecastNode([
         [8,4,2,4],
         [2,64,128,0],
         [8,64,4,2],
         [4,2,16,8]
-      ], [LEFT]),
+      ], 4, [LEFT]),
       generateForecastNode([
         [8,4,2,0],
         [2,64,128,2],
         [8,64,4,2],
         [4,2,16,8]
-      ], [LEFT]),
+      ], 2, [LEFT]),
       generateForecastNode([
         [8,4,2,0],
         [2,64,128,4],
         [8,64,4,2],
         [4,2,16,8]
-      ], [LEFT]),
+      ], 4, [LEFT]),
     ];
 
     let result = generateForecasts([node], 1);
@@ -202,5 +202,31 @@ describe("generateForecasts()", () => {
     for (let node of result) {
       expect(node.originatingPath.length).toEqual(depth);
     }
+  });
+
+  it("reduces prediction horizon when all leaves are terminating states", () => {
+    let grid = [
+      [32,32,8,32],
+      [8,16,4,16],
+      [2,8,16,2],
+      [8,4,8,4]
+    ];
+    
+    let result = generateForecasts([generateForecastNode(grid)]);
+    
+    expect(JSON.stringify(result)).toEqual(JSON.stringify([generateForecastNode(grid)]));
+  });
+
+  it("returns empty array when the starting grid is a terminating state", () => {
+    let grid = [
+      [32,64,8,32],
+      [8,16,4,16],
+      [2,8,16,2],
+      [8,4,8,4]
+    ];
+    
+    let result = generateForecasts([generateForecastNode(grid)]);
+    
+    expect(result).toEqual([]);
   });
 });
