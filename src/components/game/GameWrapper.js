@@ -8,7 +8,7 @@ import GameGrid from "./GameGrid";
 import GameControls from "./GameControls";
 
 import * as actions from "../../actions";
-import {processMove, isNonEmpty} from "./lib/gameEngine";
+import {processMove} from "./lib/gameEngine";
 import {ANIM_SLIDE, GAME_OVER} from "../../globalOptions";
 
 const duration = 1000;
@@ -29,10 +29,10 @@ const GameWrapper = props => {
   const handleMove = (direction, grid) => {
     // can make a move only if there's no active animation
     if (!props.animPhase) {
-      let {newGrid, deltaScore, destinations} = processMove(direction, grid);
+      let {newGrid, deltaScore, destinations, validMove} = processMove(direction, grid);
       
       // move is valid only if it moves at least 1 tile
-      if (isNonEmpty(destinations)) {
+      if (validMove) {
         props.storePartialMove(newGrid, deltaScore);
         props.storeDestinations(direction, destinations);
         props.increaseMoveCount();

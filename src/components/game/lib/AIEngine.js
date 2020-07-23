@@ -12,7 +12,7 @@ import {
   DOWN,
   DEFAULT_TREE_DEPTH
 } from "../../../globalOptions";
-import {zeroCount, transpose, copyGrid, gridSum, processMove, isNonEmpty} from "./gameEngine";
+import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
 import {encodeState, decodeState} from "./encoding";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
@@ -68,15 +68,14 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   let curNode;
 
   let queue = nodes;
-  let forecasts = [];
 
   while (queue.length) {
     curNode = queue.shift();
 
     for (let direction of [UP, LEFT, RIGHT, DOWN]) {
-      let {newGrid: computedGrid, destinations} = processMove(direction, decodeState(curNode.grid));
+      let {newGrid: computedGrid, validMove} = processMove(direction, decodeState(curNode.grid));
   
-      if (isNonEmpty(destinations)) {
+      if (validMove) {
         for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
           for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
             if (computedGrid[i][j] === 0) {
@@ -86,10 +85,11 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   
                 let newNode = generateForecastNode(tempGrid, [...curNode.originatingPath, direction]);
   
-                if (newNode.originatingPath.length < maxDepth) {
+                if (newNode.originatingPath.length <= maxDepth) {
                   queue.push(newNode);
                 } else {
-                  forecasts.push(newNode);
+                  queue.unshift(curNode);
+                  return queue;
                 }
               }
             }
@@ -98,6 +98,4 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
       }
     }
   }
-
-  return forecasts;
 }

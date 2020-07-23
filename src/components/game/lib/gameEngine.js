@@ -184,6 +184,8 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   let newGrid = copyGrid(grid); 
   let deltaScore = 0; 
   let destinations = GRID_INITIAL_STATE();
+  let validMove = false;
+
   let arr, encArr, newArr, scoreArr, destArr;
   let type, reverse;
 
@@ -208,6 +210,7 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
     if (precomputedMoves.has(encArr)) {
       ([newArr, scoreArr, destArr] = precomputedMoves.get(encArr));
       newArr = decodeRow(newArr);
+      validMove = true;
     } else {
       ([newArr, scoreArr, destArr] = [arr, 0, [0, 0, 0, 0]]);
     }
@@ -219,7 +222,7 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
     destinations = changeSign(destinations);
   }
 
-  return {newGrid, deltaScore, destinations};
+  return {newGrid, deltaScore, destinations, validMove};
 };
 
 // test variable used only for testing purposes forces a 2 in the first available zero tile
@@ -255,14 +258,14 @@ export const addRandomTile = (grid, test = false) => {
 };
 
 // check validity by summing up the destinations - if non-zero, a movement has been made
-export const isNonEmpty = destinations => !!gridSum(destinations);
+export const isNonEmpty = grid => !!gridSum(grid);
 
 export const isGameOver = grid => {
   // process grid to return true
   if (!zeroCount(grid)) {
     return ![UP, LEFT, RIGHT, DOWN]
-      .map(direction => processMove(direction, grid).deltaScore)
-      .reduce((totSum, score) => totSum + score);
+      .map(direction => processMove(direction, grid).validMove)
+      .reduce((totValid, valid) => totValid || valid);
   }
 
   return false;
