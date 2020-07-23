@@ -185,7 +185,7 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   let deltaScore = 0; 
   let destinations = GRID_INITIAL_STATE();
   let arr, encArr, newArr, scoreArr, destArr;
-  let type, reverse, trasformDest = () => {};
+  let type, reverse;
 
   switch (direction) {
     case UP:

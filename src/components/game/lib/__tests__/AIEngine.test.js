@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT, RIGHT, DOWN, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, createTree, generateNode, growTree} from "../AIEngine";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts} from "../AIEngine";
 import {copyGrid, processMove} from "../gameEngine";
 import {encodeTile, encodeState} from "../encoding";
 
@@ -119,76 +119,79 @@ describe("bayesBetaUpdate()", () => {
   });
 });
 
-describe("growTree()", () => {
-  let grid, tree;
+describe("generateForecasts()", () => {
+  let grid;
 
   beforeEach(() => {
     grid = [
-      [0,0,0,0],
-      [0,0,0,0],
-      [0,0,0,2],
-      [0,0,0,0]
+      [0,8,4,2],
+      [0,2,64,128],
+      [8,64,4,2],
+      [4,2,16,8]
     ];
-    tree = createTree(generateNode(grid, {i: 2, j: 3, value: 2}));
   });
 
   afterEach(() => {
     grid = null;
-    tree = null;
   });
 
-  it("grows an empty tree 1 step ahead correctly", () => {
-    let computedGrid, tempGrid;
+  it("generates a 1-step ahead forecast correctly", () => {
+    let node = generateForecastNode(grid);
+    let newNodes = [
+      generateForecastNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [2,64,4,2],
+        [0,2,16,8]
+      ], [UP]),
+      generateForecastNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [4,64,4,2],
+        [0,2,16,8]
+      ], [UP]),
+      generateForecastNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [0,64,4,2],
+        [2,2,16,8]
+      ], [UP]),
+      generateForecastNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [0,64,4,2],
+        [4,2,16,8]
+      ], [UP]),
+      generateForecastNode([
+        [8,4,2,2],
+        [2,64,128,0],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], [LEFT]),
+      generateForecastNode([
+        [8,4,2,4],
+        [2,64,128,0],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], [LEFT]),
+      generateForecastNode([
+        [8,4,2,0],
+        [2,64,128,2],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], [LEFT]),
+      generateForecastNode([
+        [8,4,2,0],
+        [2,64,128,4],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], [LEFT]),
+    ];
 
-    growTree(tree, 1);
+    let result = generateForecasts([node], 1);
 
-    for (let direction of [UP, LEFT, RIGHT, DOWN]) {
-      computedGrid = processMove(direction, grid).newGrid;
-
-      for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
-        for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
-          if (computedGrid[i][j] === 0) {
-            for (let value of [2, 4]) {
-              tempGrid = copyGrid(computedGrid);
-              tempGrid[i][j] = value;
-
-              expect(tree.root.nextMoveState.get(direction).get(encodeTile({i, j, value})).grid).toEqual(encodeState(tempGrid));
-            }
-          }
-        }
-      }
+    for (let k = 0; k < result.length; k++) {
+      expect(JSON.stringify(result[k])).toEqual(JSON.stringify(newNodes[k]));
     }
   });
-  
-  // it("grows any valid single path from root to leaf correctly", () => {
-  //   let maxDepth = 2;
-  //   let depth = 0;
-  //   let moveSequence = [
-  //     {direction: LEFT, newTile: {i: 0, j: 0, value: 2}},
-  //     {direction: DOWN, newTile: {i: 2, j: 1, value: 2}},
-  //     {direction: LEFT, newTile: {i: 1, j: 3, value: 2}},
-  //     {direction: LEFT, newTile: {i: 0, j: 1, value: 2}},
-  //     {direction: DOWN, newTile: {i: 3, j: 2, value: 4}},
-  //     {direction: DOWN, newTile: {i: 2, j: 3, value: 2}},
-  //     // {direction: LEFT, newTile: {i: 2, j: 1, value: 2}}
-  //   ];
-  //   let tempGrid;
-
-  //   growTree(tree, maxDepth);
-
-  //   let node = tree.root.nextMoveState.get(moveSequence[depth].direction).get(encodeTile(moveSequence[depth].newTile));
-  //   while (node) {
-  //     console.log(depth);
-  //     tempGrid = processMove(moveSequence[depth].direction, grid).newGrid;
-  //     let {i, j , value} = moveSequence[depth].newTile;
-  //     tempGrid[i][j] = value;
-
-  //     expect(node.grid).toEqual(encodeState(tempGrid));
-
-  //     depth++;
-  //     node = node.nextMoveState.get(moveSequence[depth].direction).get(encodeTile(moveSequence[depth].newTile));
-  //   }
-
-  //   expect(depth).toBeCloseTo(maxDepth - 1);
-  // });
 });
