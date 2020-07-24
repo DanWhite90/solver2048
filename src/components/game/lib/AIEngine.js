@@ -121,7 +121,7 @@ export const pruneForecasts = (nodes, direction, tile) => {
   }
 
   let newNodes = [];
-  
+
   for (let node of nodes) {
     if (node.originatingPath[0].direction === direction && node.originatingPath[0].tile === encodeTile(tile)) {
       node.originatingPath.shift();
@@ -132,12 +132,14 @@ export const pruneForecasts = (nodes, direction, tile) => {
   return newNodes;
 }
 
-export const optimalMove = (grid, maxDepth = DEFAULT_TREE_DEPTH) => {
-  let leaves = generateForecasts([generateForecastNode(grid)], maxDepth);
+export const slideForecasts = (nodes, direction, tile, maxDepth = DEFAULT_TREE_DEPTH) => {
+  return generateForecasts(pruneForecasts(nodes, direction, tile), maxDepth);
+}
 
+export const optimalMove = (nodes) => {
   let utilities = new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, {utility: 0, count: 0}]));
 
-  for (let leaf of leaves) {
+  for (let node of nodes) {
 
   }
 }
