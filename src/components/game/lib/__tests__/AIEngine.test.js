@@ -299,6 +299,14 @@ describe("optimalMove()", () => {
   });
 
   it("returns null when the input node is a root", () => {
-    console.log(optimalMove(nodes, grid, moveCount));
+    let result = optimalMove([generateForecastNode(grid)], grid, moveCount);
+
+    expect(result).toEqual(null);
+  });
+
+  it("returns null when thereàs no input node", () => {
+    let result = optimalMove([], grid, moveCount);
+
+    expect(result).toEqual(null);
   });
 });
