@@ -132,6 +132,7 @@ export const pruneForecasts = (nodes, direction, tile) => {
   return newNodes;
 }
 
+// This is supposed to be the public API for managing the forecast tree
 export const slideForecasts = (nodes, direction, tile, maxDepth = DEFAULT_TREE_DEPTH) => {
   return generateForecasts(pruneForecasts(nodes, direction, tile), maxDepth);
 }
@@ -155,7 +156,7 @@ export const optimalMove = (nodes, grid, moveCount) => {
   
   let maxUtil = -Infinity; 
   for (let [dir, value] of utilities.entries()) {
-    value.expectedUtility /= value.count ? value.count / 2 : 1;
+    value.expectedUtility /= value.count ? value.count : 1;
 
     if (value.expectedUtility > maxUtil) {
       maxUtil = value.expectedUtility;

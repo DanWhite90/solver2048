@@ -83,8 +83,9 @@ export const setAnimationPhase = phase => {
 }
 
 // AI action creators
-export const updateTreeStatus = () => {
+export const updateTreeStatus = leaves => {
   return {
-    type: UPDATE_AI_TREE
+    type: UPDATE_AI_TREE,
+    payload: leaves
   };
 }
