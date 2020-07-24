@@ -14,7 +14,7 @@ import {
   FORECAST_TREE_SIZE_THRESHOLD
 } from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
-import {encodeState, decodeState, encodeTile} from "./encoding";
+import {encodeState, decodeState, encodeTile, decodeTile} from "./encoding";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
@@ -52,7 +52,7 @@ export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultSco
 }
 
 // Cobb-Douglas utility with equal weights
-export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_SIGMOID) ** 0.5);
+export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5;
 
 export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
 
@@ -136,10 +136,33 @@ export const slideForecasts = (nodes, direction, tile, maxDepth = DEFAULT_TREE_D
   return generateForecasts(pruneForecasts(nodes, direction, tile), maxDepth);
 }
 
-export const optimalMove = (nodes) => {
-  let utilities = new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, {utility: 0, count: 0}]));
+export const optimalMove = (nodes, grid, moveCount) => {
+  if (!nodes.length || !nodes[0].originatingPath.length) {
+    return null;
+  }
+
+  let optMove = null;
+  let utilities = new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, {expectedUtility: 0, count: 0}]));
+  let p_hat = bayesBetaUpdate(grid, moveCount);
 
   for (let node of nodes) {
+    let {direction: dir, tile} = node.originatingPath[0];
+    tile = decodeTile(tile);
 
+    utilities.get(dir).expectedUtility += tile.value === 2 ? p_hat * utility(decodeState(node.grid)) : (1 - p_hat) * utility(decodeState(node.grid));
+    utilities.get(dir).count++;
   }
+  
+  let maxUtil = -Infinity; 
+  for (let [dir, value] of utilities.entries()) {
+    value.expectedUtility /= value.count ? value.count / 2 : 1;
+
+    if (value.expectedUtility > maxUtil) {
+      maxUtil = value.expectedUtility;
+      optMove = dir;
+    }
+    console.log([dir, value]);
+  }
+
+  return optMove;
 }

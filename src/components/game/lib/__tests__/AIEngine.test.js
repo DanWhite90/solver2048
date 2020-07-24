@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts, pruneForecasts} from "../AIEngine";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts, pruneForecasts, optimalMove} from "../AIEngine";
 import {encodeTile} from "../encoding";
 
 describe("monotonicityScore()", () => {
@@ -274,5 +274,31 @@ describe("pruneForecasts()", () => {
     let result = pruneForecasts([], LEFT, {i: 0, j: 3, value: 2});
 
     expect(result).toEqual([]);
+  });
+});
+
+describe("optimalMove()", () => {
+  let grid, nodes, moveCount;
+
+  beforeEach(() => {
+    grid = [
+      [32,2,16,2],
+      [2,128,16,8],
+      [4,64,8,2],
+      [8,4,2,4]
+    ];
+    moveCount = 137;
+
+    nodes = generateForecasts([generateForecastNode(grid)], 3);
+  });
+
+  afterEach(() => {
+    grid = null;
+    moveCount = null;
+    nodes = null;
+  });
+
+  it("returns null when the input node is a root", () => {
+    console.log(optimalMove(nodes, grid, moveCount));
   });
 });
