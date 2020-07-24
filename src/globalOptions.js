@@ -66,7 +66,7 @@ export const REDUX_INITIAL_STATE = () => ({
     animPhase: ANIM_NEW_TILE
   },
   ai: {
-    gameTreeLeaves: new Map()
+    forecastLeaves: new Map()
   }
 });
 
