@@ -47,7 +47,6 @@ export const TOUCH_SLIDE_MIN_RADIUS = 50;
 export const REDUX_INITIAL_STATE = () => ({
   game: {
     grid: GRID_INITIAL_STATE(),
-    aiActive: false,
     score: 0,
     gridHistory: [],  // encoded with the encoding library for efficiency
     status: GAME_INIT,
@@ -55,18 +54,19 @@ export const REDUX_INITIAL_STATE = () => ({
     // breakdown of grid updates in animations
     newTile: {i: 0, j: 0, value: 0},
     computedGrid: GRID_INITIAL_STATE(), // resulting grid after stacking but before adding new tile
-    computedScore: 0
+    computedScore: 0,
   },
   device: {
-    isTouchDevice: false
+    isTouchDevice: false,
   },
   ui: {
     direction: LEFT,
     destinations: GRID_INITIAL_STATE(),
-    animPhase: ANIM_NEW_TILE
+    animPhase: ANIM_NEW_TILE,
   },
   ai: {
-    forecastLeaves: new Map()
+    aiActive: false,
+    forecastLeaves: [],
   }
 });
 
@@ -100,4 +100,4 @@ export const BETA = 1;
 
 // Tree parameters
 export const DEFAULT_TREE_DEPTH = 10;
-export const FORECAST_TREE_SIZE_THRESHOLD = 200;
+export const FORECAST_TREE_SIZE_THRESHOLD = 1000;

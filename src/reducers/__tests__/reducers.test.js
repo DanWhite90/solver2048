@@ -36,14 +36,14 @@ describe("gameReducer", () => {
     expect(JSON.stringify(gameReducer(REDUX_INITIAL_STATE().game, action))).toEqual(JSON.stringify(result));
   });
 
-  it("updates AI status properly", () => {
-    let action = {
-      type: AI_TOGGLE
-    }
+  // it("updates AI status properly", () => {
+  //   let action = {
+  //     type: AI_TOGGLE
+  //   }
 
-    let result = {...REDUX_INITIAL_STATE().game, aiActive: !REDUX_INITIAL_STATE().game.aiActive};
+  //   let result = {...REDUX_INITIAL_STATE().game, aiActive: !REDUX_INITIAL_STATE().game.aiActive};
 
-    expect(JSON.stringify(gameReducer(REDUX_INITIAL_STATE().game, action))).toEqual(JSON.stringify(result));
-  });
+  //   expect(JSON.stringify(gameReducer(REDUX_INITIAL_STATE().game, action))).toEqual(JSON.stringify(result));
+  // });
 
 });

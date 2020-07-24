@@ -254,7 +254,7 @@ export const addRandomTile = (grid, test = false) => {
     }
   }
   
-  return {newGrid: newGrid, newTile: {i: i, j: j, value: newTile}};
+  return {newGrid, newTile: {i, j, value: newTile}};
 };
 
 // check validity by summing up the destinations - if non-zero, a movement has been made

@@ -61,12 +61,14 @@ const GameHeader = props => {
 
 const mapStateToProps = state => {
   return {
-    aiActive: state.game.aiActive,
+    // game
     emptyHistory: !state.game.gridHistory.length,
     score: state.game.score,
     grid: state.game.grid,
     status: state.game.status,
-    moveCount: state.game.moveCount
+    moveCount: state.game.moveCount,
+    // ai
+    aiActive: state.ai.aiActive,
   };
 }
 

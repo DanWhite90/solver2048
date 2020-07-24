@@ -9,7 +9,7 @@ import GameControls from "./GameControls";
 
 import * as actions from "../../actions";
 import {processMove} from "./lib/gameEngine";
-import {ANIM_SLIDE, GAME_OVER} from "../../globalOptions";
+import {ANIM_NONE, ANIM_SLIDE, GAME_OVER} from "../../globalOptions";
 
 const duration = 1000;
 const defaultStyle = {
@@ -28,7 +28,7 @@ const GameWrapper = props => {
   // generic move handler to be passed for touch/keyboard/mouse handlers
   const handleMove = (direction, grid) => {
     // can make a move only if there's no active animation
-    if (!props.animPhase) {
+    if (props.animPhase === ANIM_NONE) {
       let {newGrid, deltaScore, destinations, validMove} = processMove(direction, grid);
       
       // move is valid only if it moves at least 1 tile

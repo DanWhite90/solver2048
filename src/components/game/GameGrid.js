@@ -8,10 +8,14 @@ import {addRandomTile, isGameOver} from "./lib/gameEngine";
 import * as actions from "../../actions";
 
 import Tile from "./Tile";
+import {generateForecastNode, generateForecasts, pruneForecasts, optimalMove} from "./lib/AIEngine";
 
 const GameGrid = props => {
-  let {animPhase} = props;
+  let {animPhase, aiActive} = props;
+
   let prevAnimPhase = usePrevious(animPhase);
+  let prevAiActive = usePrevious(aiActive);
+
   const touchInfoRef = useRef({
     touching: false,
     x: 0,
@@ -19,6 +23,7 @@ const GameGrid = props => {
   });
 
   const animPhaseChanged = () => animPhase !== prevAnimPhase;
+  const aiActiveChanged = () => aiActive !== prevAiActive;
 
   const duration = {
     [ANIM_SLIDE]: 40,
@@ -70,45 +75,48 @@ const GameGrid = props => {
   };
 
   const handleTouchMoveStart = e => {
-    touchInfoRef.current = {
-      touching: true,
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
+    if (!aiActive) {
+      touchInfoRef.current = {
+        touching: true,
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY
+      };
+    }
   };
 
   const handleTouchMove = e => {
-    const dx = e.touches[0].clientX - touchInfoRef.current.x;
-    const dy = e.touches[0].clientY - touchInfoRef.current.y;
-    const r = Math.sqrt(dx**2 + dy**2);
-    let direction;
-    
-    if (r > TOUCH_SLIDE_MIN_RADIUS) {
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 0) {
-          direction = RIGHT;
+    if (!aiActive) {
+      const dx = e.touches[0].clientX - touchInfoRef.current.x;
+      const dy = e.touches[0].clientY - touchInfoRef.current.y;
+      const r = Math.sqrt(dx**2 + dy**2);
+      let direction;
+      
+      if (r > TOUCH_SLIDE_MIN_RADIUS) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 0) {
+            direction = RIGHT;
+          } else {
+            direction = LEFT;
+          }
         } else {
-          direction = LEFT;
+          if (dy > 0) {
+            direction = DOWN;
+          } else {
+            direction = UP;
+          }
         }
-      } else {
-        if (dy > 0) {
-          direction = DOWN;
-        } else {
-          direction = UP;
+        if (touchInfoRef.current.touching) {
+          props.handleMove(direction, props.grid);
+          touchInfoRef.current.touching = false;
         }
-      }
-      if (touchInfoRef.current.touching) {
-        props.handleMove(direction, props.grid);
-        touchInfoRef.current.touching = false;
       }
     }
-    // call handleMove
   };
 
   // add keyboard listener
   useEffect(() => {
     const handleKeyboardMove = e => {
-      if (directions.has(e.key)) {
+      if (!aiActive && directions.has(e.key)) {
         props.handleMove(directions.get(e.key), props.grid);
       }
     };
@@ -122,6 +130,27 @@ const GameGrid = props => {
     switch (animPhase) {
 
       case ANIM_NONE:
+        if (animPhaseChanged() || aiActiveChanged()) {
+          if (aiActive) {
+            let forecastLeaves;
+
+            // if (props.forecastLeaves.length && !aiActiveChanged()) {
+            //   forecastLeaves = generateForecasts(props.forecastLeaves);
+            // } else {
+            //   forecastLeaves = generateForecasts([generateForecastNode(props.grid)]);
+            // }
+            forecastLeaves = generateForecasts([generateForecastNode(props.grid)]);
+
+            let optMove = optimalMove(forecastLeaves, props.grid, props.moveCount);
+            // props.updateTreeStatus(forecastLeaves);
+
+            if (optMove !== null) {
+              props.handleMove(optMove, props.grid);
+            } else {
+              // do something to catch up for ending game
+            }
+          }
+        }
         break;
 
       case ANIM_SLIDE:
@@ -136,6 +165,7 @@ const GameGrid = props => {
       case ANIM_NEW_TILE:
         if (animPhaseChanged()) {
           const {newGrid, newTile} = addRandomTile(props.grid);
+
           if (isGameOver(newGrid)) {
             props.updateGame(newGrid, 0, newTile);
             props.setGameStatus(GAME_OVER);
@@ -148,6 +178,10 @@ const GameGrid = props => {
               props.updateGame(newGrid, 0, newTile);
               props.setAnimationPhase(ANIM_NONE);
             }, duration[animPhase]);
+
+            // if (aiActive) {
+            //   props.updateTreeStatus(pruneForecasts(props.forecastLeaves, props.direction, props.newTile));
+            // }
           }
         }
         break;
@@ -173,7 +207,7 @@ const GameGrid = props => {
 }
 
 const mapStateToProps = state => {
-  return {
+  let mappedStates = {
     // game
     grid: state.game.grid,
     moveCount: state.game.moveCount,
@@ -183,8 +217,16 @@ const mapStateToProps = state => {
     // ui
     direction: state.ui.direction,
     destinations: state.ui.destinations,
-    animPhase: state.ui.animPhase
+    animPhase: state.ui.animPhase,
+    // ai
+    aiActive: state.ai.aiActive,
   };
+
+  if (state.ai.aiActive) {
+    mappedStates.forecastLeaves = state.ai.forecastLeaves;
+  }
+
+  return mappedStates;
 }
 
 export default connect(mapStateToProps, actions)(GameGrid);

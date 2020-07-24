@@ -48,8 +48,8 @@ const GameControls = props => {
 const mapStateToProps = state => {
   return {
     grid: state.game.grid,
-    aiActive: state.game.aiActive,
-    status: state.game.status
+    status: state.game.status,
+    aiActive: state.ai.aiActive,
   };
 }
 

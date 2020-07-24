@@ -3,7 +3,7 @@ import {
   GAME_GRID_SIZE_M, 
   scoringFunctions, 
   defaultScoringFunction, 
-  SCORE_SIGMOID, 
+  SCORE_POS_EXP, 
   ALPHA, 
   BETA,
   UP,
@@ -52,7 +52,7 @@ export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultSco
 }
 
 // Cobb-Douglas utility with equal weights
-export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_SIGMOID)) ** 0.5;
+export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_POS_EXP)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_POS_EXP)) ** 0.5;
 
 export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
 
@@ -162,7 +162,6 @@ export const optimalMove = (nodes, grid, moveCount) => {
       maxUtil = value.expectedUtility;
       optMove = dir;
     }
-    console.log([dir, value]);
   }
 
   return optMove;
