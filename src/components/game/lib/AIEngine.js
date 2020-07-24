@@ -14,7 +14,7 @@ import {
   FORECAST_TREE_SIZE_THRESHOLD
 } from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
-import {encodeState, decodeState} from "./encoding";
+import {encodeState, decodeState, encodeTile} from "./encoding";
 
 const totalMonotonicityDivisor = (GAME_GRID_SIZE_N - 1) * GAME_GRID_SIZE_M + GAME_GRID_SIZE_N * (GAME_GRID_SIZE_M - 1);
 const totalTiles = GAME_GRID_SIZE_N * GAME_GRID_SIZE_M;
@@ -59,12 +59,12 @@ export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1)
 ///////////////////////////////////////////////////////////////////////////////
 // Game tree manipulation functions
 // Not using classes in order to preserve Redux single source of truth (class methods can modify state without reducers)
-export const generateForecastNode = (grid, tile = 0, originatingPath = []) => ({
+export const generateForecastNode = (grid, originatingPath = []) => ({
   grid: encodeState(grid),
-  tile,
   originatingPath
 });
 
+// has to be recomputed for each new grid, because it returns only the leaves of the game tree for memory constraints
 export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   let tempGrid;
   let curNode;
@@ -86,7 +86,7 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
                 tempGrid = copyGrid(computedGrid);
                 tempGrid[i][j] = value;
   
-                let newNode = generateForecastNode(tempGrid, value, [...curNode.originatingPath, direction]);
+                let newNode = generateForecastNode(tempGrid, [...curNode.originatingPath, {direction, tile: encodeTile({i, j, value})}]);
 
                 // when a new node reaches a new depth, stop if the number of leaves has reached a certain threshold or depth reached a certain level
                 if (curDepth !== newNode.originatingPath.length && (queue.length > FORECAST_TREE_SIZE_THRESHOLD || newNode.originatingPath.length > maxDepth)) {
@@ -111,5 +111,28 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   } else {
     // game over
     return [];
+  }
+}
+
+export const pruneForecasts = (nodes, direction, tile) => {
+  let newNodes = [];
+
+  for (let node of nodes) {
+    if (node.originatingPath[0].direction === direction && node.originatingPath[0].tile === encodeTile(tile)) {
+      node.originatingPath.shift();
+      newNodes.push(node);
+    }
+  }
+
+  return newNodes;
+}
+
+export const optimalMove = (grid, maxDepth = DEFAULT_TREE_DEPTH) => {
+  let leaves = generateForecasts([generateForecastNode(grid)], maxDepth);
+
+  let utilities = new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, {utility: 0, count: 0}]));
+
+  for (let leaf of leaves) {
+
   }
 }

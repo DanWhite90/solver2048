@@ -1,7 +1,6 @@
-import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT, RIGHT, DOWN, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts} from "../AIEngine";
-import {copyGrid, processMove} from "../gameEngine";
-import {encodeTile, encodeState} from "../encoding";
+import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts, pruneForecasts} from "../AIEngine";
+import {encodeTile} from "../encoding";
 
 describe("monotonicityScore()", () => {
 
@@ -120,7 +119,7 @@ describe("bayesBetaUpdate()", () => {
 });
 
 describe("generateForecasts()", () => {
-  let grid;
+  let grid, newNodes;
 
   beforeEach(() => {
     grid = [
@@ -129,66 +128,66 @@ describe("generateForecasts()", () => {
       [8,64,4,2],
       [4,2,16,8]
     ];
-  });
 
-  afterEach(() => {
-    grid = null;
-  });
-
-  it("generates a 1-step ahead forecast correctly", () => {
-    let node = generateForecastNode(grid);
-    let newNodes = [
+    newNodes = [
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [2,64,4,2],
         [0,2,16,8]
-      ], 2, [UP]),
+      ], [{direction: UP, tile: encodeTile({i: 2, j: 0, value: 2})}]),
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [4,64,4,2],
         [0,2,16,8]
-      ], 4, [UP]),
+      ], [{direction: UP, tile: encodeTile({i: 2, j: 0, value: 4})}]),
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [0,64,4,2],
         [2,2,16,8]
-      ], 2, [UP]),
+      ], [{direction: UP, tile: encodeTile({i: 3, j: 0, value: 2})}]),
       generateForecastNode([
         [8,8,4,2],
         [4,2,64,128],
         [0,64,4,2],
         [4,2,16,8]
-      ], 4, [UP]),
+      ], [{direction: UP, tile: encodeTile({i: 3, j: 0, value: 4})}]),
       generateForecastNode([
         [8,4,2,2],
         [2,64,128,0],
         [8,64,4,2],
         [4,2,16,8]
-      ], 2, [LEFT]),
+      ], [{direction: LEFT, tile: encodeTile({i: 0, j: 3, value: 2})}]),
       generateForecastNode([
         [8,4,2,4],
         [2,64,128,0],
         [8,64,4,2],
         [4,2,16,8]
-      ], 4, [LEFT]),
+      ], [{direction: LEFT, tile: encodeTile({i: 0, j: 3, value: 4})}]),
       generateForecastNode([
         [8,4,2,0],
         [2,64,128,2],
         [8,64,4,2],
         [4,2,16,8]
-      ], 2, [LEFT]),
+      ], [{direction: LEFT, tile: encodeTile({i: 1, j: 3, value: 2})}]),
       generateForecastNode([
         [8,4,2,0],
         [2,64,128,4],
         [8,64,4,2],
         [4,2,16,8]
-      ], 4, [LEFT]),
+      ], [{direction: LEFT, tile: encodeTile({i: 1, j: 3, value: 4})}]),
     ];
+  });
 
-    let result = generateForecasts([node], 1);
+  afterEach(() => {
+    grid = null;
+    newNodes = null;
+  });
+
+  it("generates a 1-step ahead forecast correctly", () => {
+    let result = generateForecasts([generateForecastNode(grid)], 1);
 
     for (let k = 0; k < result.length; k++) {
       expect(JSON.stringify(result[k])).toEqual(JSON.stringify(newNodes[k]));
@@ -228,5 +227,40 @@ describe("generateForecasts()", () => {
     let result = generateForecasts([generateForecastNode(grid)]);
     
     expect(result).toEqual([]);
+  });
+});
+
+describe("pruneForecasts()", () => {
+  let grid, nodes;
+
+  beforeEach(() => {
+    grid = [
+      [0,8,4,2],
+      [0,2,64,128],
+      [8,64,4,2],
+      [4,2,16,8]
+    ];
+
+    nodes = generateForecasts([generateForecastNode(grid)], 1);
+  });
+
+  afterEach(() => {
+    grid = null;
+    nodes = null;
+  });
+
+  it("prunes a 1-depth tree correctly", () => {
+    let expected = [
+      generateForecastNode([
+        [8,4,2,2],
+        [2,64,128,0],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], [])
+    ];
+    
+    let result = pruneForecasts(nodes, LEFT, {i: 0, j: 3, value: 2});
+
+    expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
   });
 });
