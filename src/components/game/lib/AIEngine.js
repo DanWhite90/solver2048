@@ -114,9 +114,14 @@ export const generateForecasts = (nodes, maxDepth = DEFAULT_TREE_DEPTH) => {
   }
 }
 
+// prune the forecast leaves based on what move has ben made and what random tile appeared tile = {i: number, j: number, value: number}
 export const pruneForecasts = (nodes, direction, tile) => {
-  let newNodes = [];
+  if (!nodes.length || !nodes[0].originatingPath.length) {
+    return [];
+  }
 
+  let newNodes = [];
+  
   for (let node of nodes) {
     if (node.originatingPath[0].direction === direction && node.originatingPath[0].tile === encodeTile(tile)) {
       node.originatingPath.shift();

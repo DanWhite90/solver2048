@@ -263,4 +263,16 @@ describe("pruneForecasts()", () => {
 
     expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
   });
+
+  it("returns an empty array when a the given node is a root", () => {
+    let result = pruneForecasts([generateForecastNode(grid)], LEFT, {i: 0, j: 3, value: 2});
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns an empty array when given no node", () => {
+    let result = pruneForecasts([], LEFT, {i: 0, j: 3, value: 2});
+
+    expect(result).toEqual([]);
+  });
 });
