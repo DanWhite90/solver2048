@@ -5,10 +5,10 @@ import {connect} from "react-redux";
 import usePrevious from "../../hooks/usePrevious";
 import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS, GAME_OVER} from "../../globalOptions";
 import {addRandomTile, isGameOver} from "./lib/gameEngine";
+import {optimMove} from "./lib/AIEngine";
 import * as actions from "../../actions";
 
 import Tile from "./Tile";
-import {generateForecastNode, generateForecasts, pruneForecasts, optimalMove} from "./lib/AIEngine";
 
 const GameGrid = props => {
   let {animPhase, aiActive} = props;
@@ -132,17 +132,7 @@ const GameGrid = props => {
       case ANIM_NONE:
         if (animPhaseChanged() || aiActiveChanged()) {
           if (aiActive) {
-            let forecastLeaves;
-
-            // if (props.forecastLeaves.length && !aiActiveChanged()) {
-            //   forecastLeaves = generateForecasts(props.forecastLeaves);
-            // } else {
-            //   forecastLeaves = generateForecasts([generateForecastNode(props.grid)]);
-            // }
-            forecastLeaves = generateForecasts([generateForecastNode(props.grid)]);
-
-            let optMove = optimalMove(forecastLeaves, props.grid, props.moveCount);
-            // props.updateTreeStatus(forecastLeaves);
+            let optMove = optimMove(props.grid, props.moveCount);
 
             if (optMove !== null) {
               props.handleMove(optMove, props.grid);

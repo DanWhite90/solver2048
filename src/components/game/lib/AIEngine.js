@@ -11,7 +11,8 @@ import {
   RIGHT,
   DOWN,
   DEFAULT_TREE_DEPTH,
-  FORECAST_TREE_SIZE_THRESHOLD
+  FORECAST_TREE_SIZE_THRESHOLD,
+  PATH_PROB_THRESHOLD,
 } from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
 import {encodeState, decodeState, encodeTile, decodeTile} from "./encoding";
@@ -58,7 +59,112 @@ export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Game tree manipulation functions
-// Not using classes in order to preserve Redux single source of truth (class methods can modify state without reducers)
+
+export const genNode = (grid, originatingMove = null, pathProb = 1, depth = 0) => ({
+  grid: encodeState(grid),
+  originatingMove,
+  pathProb,
+  depth,
+});
+
+// has to be recomputed for each new grid, because it returns only the leaves of the game tree for memory constraints
+export const genLeaves = (root, moveCount, maxDepth = DEFAULT_TREE_DEPTH) => {
+  let tempGrid;
+  let curNode;
+
+  let queue = [root];
+  let prob = bayesBetaUpdate(decodeState(root.grid), moveCount);
+  let curDepth = root.depth;
+
+  // Breadth First nodes generation 
+  while (queue.length) {
+    curNode = queue.shift();
+
+    // Stochastic pruning of very unlikely paths (paths where disproportionally too many 4s appear) - risky heuristic
+    if (curNode.depth <= 2 || curNode.pathProb ** (1 / curNode.depth) >= PATH_PROB_THRESHOLD) {
+
+      // process move for each direction
+      for (let direction of [UP, LEFT, RIGHT, DOWN]) {
+        let {newGrid: computedGrid, validMove} = processMove(direction, decodeState(curNode.grid));
+    
+        // if the move is valid generate 2 and 4 tile for each empty spot
+        if (validMove) {
+          for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
+            for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
+              if (computedGrid[i][j] === 0) {
+                for (let value of [2, 4]) {
+                  tempGrid = copyGrid(computedGrid);
+                  tempGrid[i][j] = value;
+    
+                  let newNode = genNode(
+                    tempGrid, 
+                    curNode.originatingMove === null ? direction : curNode.originatingMove, 
+                    curNode.pathProb * (value === 2 ? prob : 1 - prob), 
+                    curNode.depth + 1,
+                  );
+  
+                  // when a new node reaches a new depth, stop if the number of leaves has reached a certain threshold or depth reached a certain level
+                  if (
+                    curDepth !== newNode.depth && 
+                    (queue.length > FORECAST_TREE_SIZE_THRESHOLD || newNode.depth > maxDepth)
+                  ) {
+                    queue.unshift(curNode);
+                    return queue;
+                  } else {
+                    queue.push(newNode);
+                  }
+  
+                  curDepth = newNode.depth;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (maxDepth > 0) {
+    // if the queue gets emptied before returning it means that maxDepth step ahead had only game-over states so retries with less depth
+    return genLeaves(root, moveCount, maxDepth - 1);
+  } else {
+    // game over
+    return [];
+  }
+}
+
+export const optimMove = (grid, moveCount) => {
+  let leaves = genLeaves(genNode(grid), moveCount);
+
+  if (!leaves.length || !leaves[0].depth) {
+    return null;
+  }
+
+  let optMove = null;
+  let utilities = new Map([UP, LEFT, RIGHT, DOWN].map(direction => [direction, {expectedUtility: 0, count: 0}]));
+
+  for (let node of leaves) {
+    utilities.get(node.originatingMove).expectedUtility += node.pathProb * utility(decodeState(node.grid));
+    utilities.get(node.originatingMove).count++;
+  }
+  
+  let maxUtil = -Infinity; 
+  for (let [direction, value] of utilities.entries()) {
+    value.expectedUtility /= value.count ? value.count : 1;
+
+    if (value.expectedUtility > maxUtil) {
+      maxUtil = value.expectedUtility;
+      optMove = direction;
+    }
+  }
+
+  return optMove;
+}
+
+
+//////////////////////////////////////////////////////////////
+// OLD CODE
+
 export const generateForecastNode = (grid, originatingPath = []) => ({
   grid: encodeState(grid),
   originatingPath

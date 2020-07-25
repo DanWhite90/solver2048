@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts, pruneForecasts, optimalMove} from "../AIEngine";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate, generateForecastNode, generateForecasts, pruneForecasts, optimalMove, genLeaves, genNode} from "../AIEngine";
 import {encodeTile} from "../encoding";
 
 describe("monotonicityScore()", () => {
@@ -118,6 +118,123 @@ describe("bayesBetaUpdate()", () => {
   });
 });
 
+describe("genLeaves()", () => {
+  let grid, newNodes;
+
+  beforeEach(() => {
+    grid = [
+      [0,8,4,2],
+      [0,2,64,128],
+      [8,64,4,2],
+      [4,2,16,8]
+    ];
+
+    newNodes = [
+      genNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [2,64,4,2],
+        [0,2,16,8]
+      ], UP, 0.9, 1),
+      genNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [4,64,4,2],
+        [0,2,16,8]
+      ], UP, 0.1, 1),
+      genNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [0,64,4,2],
+        [2,2,16,8]
+      ], UP, 0.9, 1),
+      genNode([
+        [8,8,4,2],
+        [4,2,64,128],
+        [0,64,4,2],
+        [4,2,16,8]
+      ], UP, 0.1, 1),
+      genNode([
+        [8,4,2,2],
+        [2,64,128,0],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], LEFT, 0.9, 1),
+      genNode([
+        [8,4,2,4],
+        [2,64,128,0],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], LEFT, 0.1, 1),
+      genNode([
+        [8,4,2,0],
+        [2,64,128,2],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], LEFT, 0.9, 1),
+      genNode([
+        [8,4,2,0],
+        [2,64,128,4],
+        [8,64,4,2],
+        [4,2,16,8]
+      ], LEFT, 0.1, 1),
+    ];
+  });
+
+  afterEach(() => {
+    grid = null;
+    newNodes = null;
+  });
+
+  it("generates a 1-step ahead forecast correctly", () => {
+    let result = genLeaves(genNode(grid), 143, 1);
+
+    for (let k = 0; k < result.length; k++) {
+      expect(JSON.stringify(result[k].grid)).toEqual(JSON.stringify(newNodes[k].grid));
+      expect(result[k].originatingMove).toEqual(newNodes[k].originatingMove);
+      expect(result[k].pathProb).toBeCloseTo(newNodes[k].pathProb);
+      expect(result[k].depth).toEqual(newNodes[k].depth);
+    }
+  });
+
+  it("generates only nodes at the same max depth", () => {
+    let result = genLeaves(genNode(grid), 143);
+    let depth = result[0].depth;
+
+    for (let node of result) {
+      expect(node.depth).toEqual(depth);
+    }
+  });
+
+  it("reduces prediction horizon when all leaves are terminating states", () => {
+    let grid = [
+      [32,32,8,32],
+      [8,16,4,16],
+      [2,8,16,2],
+      [8,4,8,4]
+    ];
+    
+    let result = genLeaves(genNode(grid), 143);
+    
+    expect(JSON.stringify(result)).toEqual(JSON.stringify([genNode(grid)]));
+  });
+
+  it("returns empty array when the starting grid is a terminating state", () => {
+    let grid = [
+      [32,64,8,32],
+      [8,16,4,16],
+      [2,8,16,2],
+      [8,4,8,4]
+    ];
+    
+    let result = genLeaves(genNode(grid), 143);
+    
+    expect(result).toEqual([]);
+  });
+});
+
+//////////////////////////////////////////////////////////////////////////////
+// OLD TESTS
 describe("generateForecasts()", () => {
   let grid, newNodes;
 
@@ -310,3 +427,4 @@ describe("optimalMove()", () => {
     expect(result).toEqual(null);
   });
 });
+
