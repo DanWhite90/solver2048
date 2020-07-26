@@ -3,7 +3,6 @@ import {
   GAME_GRID_SIZE_M, 
   scoringFunctions, 
   defaultScoringFunction, 
-  SCORE_POS_EXP, 
   ALPHA, 
   BETA,
   UP,
@@ -13,6 +12,7 @@ import {
   DEFAULT_TREE_DEPTH,
   FORECAST_TREE_SIZE_THRESHOLD,
   PATH_PROB_THRESHOLD,
+  SCORE_LINEAR,
 } from "../../../globalOptions";
 import {zeroCount, transpose, copyGrid, gridSum, processMove} from "./gameEngine";
 import {encodeState, decodeState, encodeTile, decodeTile} from "./encoding";
@@ -53,7 +53,15 @@ export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultSco
 }
 
 // Cobb-Douglas utility with equal weights
-export const utility = grid => monotonicityScore(grid, scoringFunctions.get(SCORE_POS_EXP)) ** 0.5 * emptinessScore(grid, scoringFunctions.get(SCORE_POS_EXP)) ** 0.5;
+export const utility = grid => {
+  const ms = monotonicityScore(grid, scoringFunctions.get(SCORE_LINEAR));
+  const es = emptinessScore(grid, scoringFunctions.get(SCORE_LINEAR));
+
+  const alpha = 0.5; // weight of emptiness
+  const scale = 0.5; // should be in [0, 1]
+
+  return es ** (scale * alpha) * ms ** (scale * (1 - alpha));
+};
 
 export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
 
