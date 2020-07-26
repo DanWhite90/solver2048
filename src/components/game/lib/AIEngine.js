@@ -57,8 +57,8 @@ export const utility = grid => {
   const ms = monotonicityScore(grid, scoringFunctions.get(SCORE_LINEAR));
   const es = emptinessScore(grid, scoringFunctions.get(SCORE_LINEAR));
 
-  const alpha = 0.5; // weight of emptiness
-  const scale = 0.5; // should be in [0, 1]
+  const alpha = 0.6; // weight of emptiness
+  const scale = 4;
 
   return es ** (scale * alpha) * ms ** (scale * (1 - alpha));
 };
