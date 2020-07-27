@@ -1,5 +1,6 @@
 use crate::encoding;
 
+// StackResult
 pub struct StackResult {
   pub encoded_row: u32,
   pub encoded_new_row: u32,
@@ -8,6 +9,7 @@ pub struct StackResult {
 }
 
 impl StackResult {
+  // take ownership of everything
   fn new(row: Vec<u32>, new_row: Vec<u32>, delta_score: u32, dest_row: Vec<i8>) -> StackResult {
     StackResult {
       encoded_row: encoding::encode_row(&row),
@@ -27,6 +29,50 @@ impl StackResult {
     format!("[{}, [{}, {}, {:?}]],\n", self.encoded_row, self.encoded_new_row, self.delta_score, self.dest_row)
   }
 }
+
+// Scores
+pub struct Scores {
+  pub monotonicity: u8,
+  pub emptiness: u8,
+}
+
+impl Scores {
+  #[allow(dead_code)]
+  pub fn new(monotonicity: u8, emptiness: u8) -> Scores {
+    Scores {
+      monotonicity,
+      emptiness,
+    }
+  }
+}
+
+// MoveData
+#[allow(dead_code)]
+pub struct MoveData {
+  pub stack: StackResult,
+  pub scores: Scores,
+}
+
+impl MoveData {
+  // take ownership of everything
+  #[allow(dead_code)]
+  pub fn new(stack: StackResult, scores: Scores) -> MoveData {
+    MoveData {
+      stack,
+      scores,
+    }
+  }
+
+  #[allow(dead_code)]
+  pub fn format_js(&self) -> String {
+    format!("[{}, [{}, {}, {:?}, {}, {}]],\n", self.stack.encoded_row, self.stack.encoded_new_row, self.stack.delta_score, self.stack.dest_row, self.scores.monotonicity, self.scores.emptiness)
+  }
+}
+
+///////////////////////////////////////////////////////////
+// CORE FUNCTIONS
+
+// GAME ENGINE
 
 pub fn stack_left(row: &Vec<u32>) -> StackResult {
   let mut new_row: Vec<u32> = vec![0; 4];
@@ -56,6 +102,10 @@ pub fn stack_left(row: &Vec<u32>) -> StackResult {
 
   StackResult::new(row.clone(), new_row, delta_score, dest_row)
 }
+
+// AI ENGINE
+
+// TESTS
 
 #[cfg(test)]
 mod tests {

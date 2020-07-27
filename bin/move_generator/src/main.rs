@@ -6,7 +6,7 @@ use std::io::prelude::*;
 // use std::thread;
 // use std::time::Duration;
 
-const PATH: &str = "../../src/components/game/lib/precomputedMoves.js";
+const PATH: &str = "../../src/components/game/lib/precomputed.js";
 const LARGEST_TILE: u32 = 65536;
 
 fn main() {
@@ -70,7 +70,7 @@ fn generate_moves(){
   file.write("
 // contains only valid left stacking single row moves, all the others can be derived from these
 // the key in Map is the current encoded row, the value is an array with [new_encoded_row, score, destination_array]
-export const precomputedMoves = new Map([\n".as_bytes()).expect("Error in writing header!");
+export const precomputed = new Map([\n".as_bytes()).expect("Error in writing header!");
 
   //Generate moves
   traverse_row(&vec![0, 0, 0, 0], 0, &mut file);

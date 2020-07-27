@@ -1,5 +1,5 @@
 import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY, ROW, COLUMN, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} from "../../../globalOptions";
-import {precomputedMoves} from "./precomputedMoves";
+import {precomputed} from "./precomputed";
 import {encodeRow, decodeRow} from "./encoding";
 
 
@@ -207,8 +207,8 @@ export const processMove = (direction, grid = GRID_INITIAL_STATE()) => {
   for (let k = 0; k < n; k++) {
     arr = getArray(grid, k, type, reverse);
     encArr = encodeRow(arr);
-    if (precomputedMoves.has(encArr)) {
-      ([newArr, scoreArr, destArr] = precomputedMoves.get(encArr));
+    if (precomputed.has(encArr)) {
+      ([newArr, scoreArr, destArr] = precomputed.get(encArr));
       newArr = decodeRow(newArr);
       validMove = true;
     } else {
