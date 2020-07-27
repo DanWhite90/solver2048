@@ -35,6 +35,7 @@ export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_N, m = GAME_GRID_SIZE_M) =
 export const GAME_INIT = 0;
 export const GAME_STARTED = 1;
 export const GAME_OVER = 2;
+export const GAME_RESTART = 3;
 
 
 // UI Constants

@@ -11,7 +11,6 @@ const GameHeader = props => {
 
   const handleAIToggle = () => {
     props.toggleAI();
-    // implement AI toggle logic
   }
 
   const handleRollback = () => {
@@ -44,6 +43,7 @@ const GameHeader = props => {
             <FontAwesomeIcon icon={faBrain} size="2x" />
           </Button>
           <Button 
+            disabled={props.aiActive ? true : false}
             onClick={handleRestart}
             className="rounded-circle" 
             variant="info"
@@ -64,7 +64,6 @@ const mapStateToProps = state => {
     // game
     emptyHistory: !state.game.gridHistory.length,
     score: state.game.score,
-    grid: state.game.grid,
     status: state.game.status,
     moveCount: state.game.moveCount,
     // ai
