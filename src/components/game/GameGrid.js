@@ -138,6 +138,7 @@ const GameGrid = props => {
               props.handleMove(optMove, props.grid);
             } else {
               // do something to catch up for ending game
+              console.log("null optMove");
             }
           }
         }
