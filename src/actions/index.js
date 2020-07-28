@@ -9,7 +9,8 @@ import {
   INCREASE_MOVE_COUNT, 
   STORE_PARTIAL_MOVE, 
   SET_ANIMATION_PHASE,
-  UPDATE_AI_TREE
+  UPDATE_AI_TREE,
+  SET_VICTORY,
 } from "./types";
 
 // Game action creators
@@ -39,12 +40,6 @@ export const rollbackHistory = () => {
   };
 }
 
-export const toggleAI = () => {
-  return {
-    type: AI_TOGGLE
-  };
-}
-
 export const setGameStatus = status => {
   return {
     type: SET_GAME_STATUS,
@@ -57,6 +52,13 @@ export const storePartialMove = (computedGrid, computedScore) => {
     type: STORE_PARTIAL_MOVE,
     payload: {computedGrid, computedScore}
   }
+}
+
+export const setVictory = status => {
+  return {
+    type: SET_VICTORY,
+    payload: status,
+  };
 }
 
 
@@ -83,6 +85,12 @@ export const setAnimationPhase = phase => {
 }
 
 // AI action creators
+export const toggleAI = () => {
+  return {
+    type: AI_TOGGLE
+  };
+}
+
 export const updateTreeStatus = leaves => {
   return {
     type: UPDATE_AI_TREE,

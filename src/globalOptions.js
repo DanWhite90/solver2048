@@ -23,6 +23,7 @@ export const directions = new Map([
 ]);
 export const TILE_2_PROBABILITY = 0.9;
 export const GRID_HISTORY_MAX_LENGTH = 20;
+export const VICTORY_THRESHOLD = 2048;
 
 export const GRID_INITIAL_STATE = (n = GAME_GRID_SIZE_N, m = GAME_GRID_SIZE_M) => {
   let grid = [];
@@ -56,6 +57,7 @@ export const REDUX_INITIAL_STATE = () => ({
     newTile: {i: 0, j: 0, value: 0},
     computedGrid: GRID_INITIAL_STATE(), // resulting grid after stacking but before adding new tile
     computedScore: 0,
+    victory: false,
   },
   device: {
     isTouchDevice: false,

@@ -1,5 +1,5 @@
-import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, isGameOver, addRandomTile, isNonEmpty, getArray, setArray} from "../gameEngine";
-import {UP, LEFT, RIGHT, DOWN, ROW, COLUMN, GRID_INITIAL_STATE} from "../../../../globalOptions";
+import {transpose, reverse, processMove, changeSign, zeroCount, copyGrid, isGameOver, addRandomTile, isNonEmpty, getArray, setArray, isVictory} from "../gameEngine";
+import {UP, LEFT, RIGHT, DOWN, ROW, COLUMN, GRID_INITIAL_STATE, VICTORY_THRESHOLD} from "../../../../globalOptions";
 
 describe("transpose()", () => {
   it("transposes an nxm array correctly and return a copy", () => {
@@ -322,5 +322,29 @@ describe("isGameOver()", () => {
     ];
 
     expect(isGameOver(grid)).toEqual(true);
+  });
+});
+
+describe("isVictory()", () => {
+  it("correctly evaluates a non victory", () => {
+    const grid = [
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,0,0],
+    ];
+
+    expect(isVictory(grid)).toBeFalsy();
+  });
+
+  it("correctly evaluates a victory", () => {
+    const grid = [
+      [0,0,0,0],
+      [0,0,0,0],
+      [0,0,VICTORY_THRESHOLD,0],
+      [0,0,0,0],
+    ];
+
+    expect(isVictory(grid)).toBeTruthy();
   });
 });

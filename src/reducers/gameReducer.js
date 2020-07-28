@@ -1,4 +1,4 @@
-import {UPDATE_GAME, RESET_GAME, ROLLBACK_HISTORY, SET_GAME_STATUS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE} from "../actions/types";
+import {UPDATE_GAME, RESET_GAME, ROLLBACK_HISTORY, SET_GAME_STATUS, INCREASE_MOVE_COUNT, STORE_PARTIAL_MOVE, SET_VICTORY} from "../actions/types";
 import {REDUX_INITIAL_STATE, GRID_HISTORY_MAX_LENGTH, GAME_STARTED} from "../globalOptions";
 import {encodeState, decodeState} from "../components/game/lib/encoding";
 import {isNonEmpty} from "../components/game/lib/gameEngine";
@@ -42,6 +42,9 @@ const gameReducer = (state = REDUX_INITIAL_STATE().game, action) => {
 
     case STORE_PARTIAL_MOVE:
       return {...state, computedGrid: action.payload.computedGrid, computedScore: action.payload.computedScore};
+
+    case SET_VICTORY:
+      return {...state, victory: action.payload};
 
     default:
       return state;

@@ -57,8 +57,11 @@ const GameWrapper = props => {
             centered
           >
             <Modal.Header>
-              <Modal.Title>Game Over</Modal.Title>
+              <Modal.Title>{props.victory ? "Victory!" : "Game Over"}</Modal.Title>
             </Modal.Header>
+            <Modal.Body>
+              {props.victory ? "Congratulations!" : "Try again"}
+            </Modal.Body>
             <Modal.Footer>
               <Button onClick={handleModalClose}>Restart</Button>
             </Modal.Footer>
@@ -71,10 +74,11 @@ const GameWrapper = props => {
 
 const mapStateToProps = state => {
   return {
-    isTouchDevice: state.device.isTouchDevice,
     grid: state.game.grid,
     status: state.game.status,
-    animPhase: state.ui.animPhase
+    victory: state.game.victory,
+    isTouchDevice: state.device.isTouchDevice,
+    animPhase: state.ui.animPhase,
   }
 }
 

@@ -1,4 +1,4 @@
-import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY, ROW, COLUMN, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M} from "../../../globalOptions";
+import {GRID_INITIAL_STATE, UP, LEFT, RIGHT, DOWN, TILE_2_PROBABILITY, ROW, COLUMN, GAME_GRID_SIZE_N, GAME_GRID_SIZE_M, VICTORY_THRESHOLD} from "../../../globalOptions";
 import {precomputed} from "./precomputed";
 import {encodeRow, decodeRow} from "./encoding";
 
@@ -270,3 +270,15 @@ export const isGameOver = grid => {
 
   return false;
 };
+
+export const isVictory = grid => {
+  for (let row of grid) {
+    for (let tile of row) {
+      if (tile >= VICTORY_THRESHOLD) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}

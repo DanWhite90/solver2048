@@ -4,7 +4,7 @@ import {connect} from "react-redux";
 
 import usePrevious from "../../hooks/usePrevious";
 import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS, GAME_OVER} from "../../globalOptions";
-import {addRandomTile, isGameOver} from "./lib/gameEngine";
+import {addRandomTile, isGameOver, isVictory} from "./lib/gameEngine";
 import {optimMove} from "./lib/AIEngine";
 import * as actions from "../../actions";
 
@@ -125,7 +125,7 @@ const GameGrid = props => {
     return () => document.removeEventListener("keydown", handleKeyboardMove);
   });
 
-  // handle animation logic
+  // handle animation and game flow
   useEffect(() => {
     switch (animPhase) {
 
@@ -137,8 +137,8 @@ const GameGrid = props => {
             if (optMove !== null) {
               props.handleMove(optMove, props.grid);
             } else {
-              // do something to catch up for ending game
-              console.log("null optMove");
+              // do something to catch up for ending game or pruned paths leave empty stack
+              props.toggleAI();
             }
           }
         }
@@ -156,23 +156,23 @@ const GameGrid = props => {
       case ANIM_NEW_TILE:
         if (animPhaseChanged()) {
           const {newGrid, newTile} = addRandomTile(props.grid);
+          const victory = isVictory(newGrid);
 
-          if (isGameOver(newGrid)) {
+          if (victory || isGameOver(newGrid)) {
+            if (victory) {
+              if (props.aiActive) {
+                props.toggleAI();
+              }
+              props.setVictory(true);
+            }
             props.updateGame(newGrid, 0, newTile);
             props.setGameStatus(GAME_OVER);
             props.setAnimationPhase(ANIM_NONE);
-            console.log("game over");
-            // call termination action creator
-            // show game over modal etc
           } else {
             setTimeout(() => {
               props.updateGame(newGrid, 0, newTile);
               props.setAnimationPhase(ANIM_NONE);
             }, duration[animPhase]);
-
-            // if (aiActive) {
-            //   props.updateTreeStatus(pruneForecasts(props.forecastLeaves, props.direction, props.newTile));
-            // }
           }
         }
         break;

@@ -6,6 +6,7 @@ export const AI_TOGGLE = "AI_TOGGLE";
 export const SET_GAME_STATUS = "SET_GAME_STATUS";
 export const INCREASE_MOVE_COUNT = "INCREASE_MOVE_COUNT";
 export const STORE_PARTIAL_MOVE = "STORE_PARTIAL_MOVE";
+export const SET_VICTORY = "SET_VICTORY";
 
 // device
 export const SET_TOUCH_STATUS = "SET_TOUCH_STATUS";
