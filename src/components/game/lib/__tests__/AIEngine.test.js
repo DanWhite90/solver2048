@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, genLeaves, genNode} from "../AIEngine";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate, genLeaves, genNode, optimMove} from "../AIEngine";
 
 describe("monotonicityScore()", () => {
 
@@ -232,198 +232,16 @@ describe("genLeaves()", () => {
   });
 });
 
-//////////////////////////////////////////////////////////////////////////////
-// OLD TESTS
-// describe("generateForecasts()", () => {
-//   let grid, newNodes;
+describe("optimMove()", () => {
+  it("in returns only possible moves as optimal", () => {
+    let grid = [
+      [4,2,4,2],
+      [8,512,64,4],
+      [1024,265,32,16],
+      [64,8,8,2]
+    ];
+    let moveCount = 909;
 
-//   beforeEach(() => {
-//     grid = [
-//       [0,8,4,2],
-//       [0,2,64,128],
-//       [8,64,4,2],
-//       [4,2,16,8]
-//     ];
-
-//     newNodes = [
-//       generateForecastNode([
-//         [8,8,4,2],
-//         [4,2,64,128],
-//         [2,64,4,2],
-//         [0,2,16,8]
-//       ], [{direction: UP, tile: encodeTile({i: 2, j: 0, value: 2})}]),
-//       generateForecastNode([
-//         [8,8,4,2],
-//         [4,2,64,128],
-//         [4,64,4,2],
-//         [0,2,16,8]
-//       ], [{direction: UP, tile: encodeTile({i: 2, j: 0, value: 4})}]),
-//       generateForecastNode([
-//         [8,8,4,2],
-//         [4,2,64,128],
-//         [0,64,4,2],
-//         [2,2,16,8]
-//       ], [{direction: UP, tile: encodeTile({i: 3, j: 0, value: 2})}]),
-//       generateForecastNode([
-//         [8,8,4,2],
-//         [4,2,64,128],
-//         [0,64,4,2],
-//         [4,2,16,8]
-//       ], [{direction: UP, tile: encodeTile({i: 3, j: 0, value: 4})}]),
-//       generateForecastNode([
-//         [8,4,2,2],
-//         [2,64,128,0],
-//         [8,64,4,2],
-//         [4,2,16,8]
-//       ], [{direction: LEFT, tile: encodeTile({i: 0, j: 3, value: 2})}]),
-//       generateForecastNode([
-//         [8,4,2,4],
-//         [2,64,128,0],
-//         [8,64,4,2],
-//         [4,2,16,8]
-//       ], [{direction: LEFT, tile: encodeTile({i: 0, j: 3, value: 4})}]),
-//       generateForecastNode([
-//         [8,4,2,0],
-//         [2,64,128,2],
-//         [8,64,4,2],
-//         [4,2,16,8]
-//       ], [{direction: LEFT, tile: encodeTile({i: 1, j: 3, value: 2})}]),
-//       generateForecastNode([
-//         [8,4,2,0],
-//         [2,64,128,4],
-//         [8,64,4,2],
-//         [4,2,16,8]
-//       ], [{direction: LEFT, tile: encodeTile({i: 1, j: 3, value: 4})}]),
-//     ];
-//   });
-
-//   afterEach(() => {
-//     grid = null;
-//     newNodes = null;
-//   });
-
-//   it("generates a 1-step ahead forecast correctly", () => {
-//     let result = generateForecasts([generateForecastNode(grid)], 1);
-
-//     for (let k = 0; k < result.length; k++) {
-//       expect(JSON.stringify(result[k])).toEqual(JSON.stringify(newNodes[k]));
-//     }
-//   });
-
-//   it("generates only nodes at the same max depth", () => {
-//     let result = generateForecasts([generateForecastNode(grid)]);
-//     let depth = result[0].originatingPath.length;
-
-//     for (let node of result) {
-//       expect(node.originatingPath.length).toEqual(depth);
-//     }
-//   });
-
-//   it("reduces prediction horizon when all leaves are terminating states", () => {
-//     let grid = [
-//       [32,32,8,32],
-//       [8,16,4,16],
-//       [2,8,16,2],
-//       [8,4,8,4]
-//     ];
-    
-//     let result = generateForecasts([generateForecastNode(grid)]);
-    
-//     expect(JSON.stringify(result)).toEqual(JSON.stringify([generateForecastNode(grid)]));
-//   });
-
-//   it("returns empty array when the starting grid is a terminating state", () => {
-//     let grid = [
-//       [32,64,8,32],
-//       [8,16,4,16],
-//       [2,8,16,2],
-//       [8,4,8,4]
-//     ];
-    
-//     let result = generateForecasts([generateForecastNode(grid)]);
-    
-//     expect(result).toEqual([]);
-//   });
-// });
-
-// describe("pruneForecasts()", () => {
-//   let grid, nodes;
-
-//   beforeEach(() => {
-//     grid = [
-//       [0,8,4,2],
-//       [0,2,64,128],
-//       [8,64,4,2],
-//       [4,2,16,8]
-//     ];
-
-//     nodes = generateForecasts([generateForecastNode(grid)], 1);
-//   });
-
-//   afterEach(() => {
-//     grid = null;
-//     nodes = null;
-//   });
-
-//   it("prunes a 1-depth tree correctly", () => {
-//     let expected = [
-//       generateForecastNode([
-//         [8,4,2,2],
-//         [2,64,128,0],
-//         [8,64,4,2],
-//         [4,2,16,8]
-//       ], [])
-//     ];
-    
-//     let result = pruneForecasts(nodes, LEFT, {i: 0, j: 3, value: 2});
-
-//     expect(JSON.stringify(result)).toEqual(JSON.stringify(expected));
-//   });
-
-//   it("returns an empty array when a the given node is a root", () => {
-//     let result = pruneForecasts([generateForecastNode(grid)], LEFT, {i: 0, j: 3, value: 2});
-
-//     expect(result).toEqual([]);
-//   });
-
-//   it("returns an empty array when given no node", () => {
-//     let result = pruneForecasts([], LEFT, {i: 0, j: 3, value: 2});
-
-//     expect(result).toEqual([]);
-//   });
-// });
-
-// describe("optimalMove()", () => {
-//   let grid, nodes, moveCount;
-
-//   beforeEach(() => {
-//     grid = [
-//       [32,2,16,2],
-//       [2,128,16,8],
-//       [4,64,8,2],
-//       [8,4,2,4]
-//     ];
-//     moveCount = 137;
-
-//     nodes = generateForecasts([generateForecastNode(grid)], 3);
-//   });
-
-//   afterEach(() => {
-//     grid = null;
-//     moveCount = null;
-//     nodes = null;
-//   });
-
-//   it("returns null when the input node is a root", () => {
-//     let result = optimalMove([generateForecastNode(grid)], grid, moveCount);
-
-//     expect(result).toEqual(null);
-//   });
-
-//   it("returns null when thereàs no input node", () => {
-//     let result = optimalMove([], grid, moveCount);
-
-//     expect(result).toEqual(null);
-//   });
-// });
-
+    expect(optimMove(grid, moveCount)).toEqual(LEFT);
+  });
+});
