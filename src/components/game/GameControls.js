@@ -1,5 +1,5 @@
 import React from "react";
-import {Container, Row, Col, Button} from "react-bootstrap";
+import {Container, Row, Col, Button, Tooltip, OverlayTrigger} from "react-bootstrap";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faArrowUp, faArrowLeft, faArrowRight, faArrowDown} from '@fortawesome/free-solid-svg-icons';
 import {connect} from "react-redux";
@@ -13,19 +13,31 @@ const GameControls = props => {
     props.handleMove(direction, props.grid);
   }
 
+  const renderTooltip = props => (
+    <Tooltip id="button-tooltip" {...props}>
+      Arrows and WASD also work
+    </Tooltip>
+  );
+
   const renderButton = (direction, icon) => {
     return (
-      <Col 
-        disabled={(props.aiActive || props.status === GAME_OVER) ? true : false}
-        onClick={() => handleClick(direction)}
-        onTouchStart={() => console.log("touched")}
-        xs={4} 
-        as={Button} 
-        variant="primary" 
-        className="rounded-circle"
+      <OverlayTrigger
+        placement="right"
+        delay={{show: 0, hide: 250}}
+        overlay={renderTooltip}
       >
-        <FontAwesomeIcon icon={icon} size="lg"/>
-      </Col>
+        <Col 
+          disabled={(props.aiActive || props.status === GAME_OVER) ? true : false}
+          onClick={() => handleClick(direction)}
+          onTouchStart={() => console.log("touched")}
+          xs={4} 
+          as={Button} 
+          variant="primary" 
+          className="rounded-circle"
+        >
+          <FontAwesomeIcon icon={icon} size="lg"/>
+        </Col>
+      </OverlayTrigger>
     );
   }
 

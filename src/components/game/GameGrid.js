@@ -82,6 +82,9 @@ const GameGrid = props => {
         y: e.touches[0].clientY
       };
     }
+    if (!props.isTouchDevice) {
+      props.setTouchStatus();
+    }
   };
 
   const handleTouchMove = e => {
@@ -205,6 +208,8 @@ const mapStateToProps = state => {
     computedGrid: state.game.computedGrid,
     computedScore: state.game.computedScore,
     newTile: state.game.newTile,
+    // device
+    isTouchDevice: state.device.isTouchDevice,
     // ui
     direction: state.ui.direction,
     destinations: state.ui.destinations,

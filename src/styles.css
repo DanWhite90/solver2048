@@ -33,7 +33,10 @@ body {
   color: rgb(70, 70, 70);
 }
 
-.wrapper > h1, .wrapper > h3 {
+.wrapper > h1, 
+.wrapper > h3, 
+.wrapper > h5, 
+.wrapper > p {
   text-align: center;
 }
 
