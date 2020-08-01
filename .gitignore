@@ -24,3 +24,4 @@ yarn-error.log*
 
 # rust
 /bin/move_generator/target
+/src/components/game/lib/precomputedMoves.js
