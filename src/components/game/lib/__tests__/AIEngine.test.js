@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, genLeaves, genNode, optimMove} from "../AIEngine";
+import {monotonicityScore, emptinessScore, bayesBetaUpdate, genLeaves, genLeaf, optimMove} from "../AIEngine";
 
 describe("monotonicityScore()", () => {
 
@@ -129,49 +129,49 @@ describe("genLeaves()", () => {
     ];
 
     newNodes = [
-      genNode([
+      genLeaf([
         [8,8,4,2],
         [4,2,64,128],
         [2,64,4,2],
         [0,2,16,8]
       ], UP, 0.9, 1),
-      genNode([
+      genLeaf([
         [8,8,4,2],
         [4,2,64,128],
         [4,64,4,2],
         [0,2,16,8]
       ], UP, 0.1, 1),
-      genNode([
+      genLeaf([
         [8,8,4,2],
         [4,2,64,128],
         [0,64,4,2],
         [2,2,16,8]
       ], UP, 0.9, 1),
-      genNode([
+      genLeaf([
         [8,8,4,2],
         [4,2,64,128],
         [0,64,4,2],
         [4,2,16,8]
       ], UP, 0.1, 1),
-      genNode([
+      genLeaf([
         [8,4,2,2],
         [2,64,128,0],
         [8,64,4,2],
         [4,2,16,8]
       ], LEFT, 0.9, 1),
-      genNode([
+      genLeaf([
         [8,4,2,4],
         [2,64,128,0],
         [8,64,4,2],
         [4,2,16,8]
       ], LEFT, 0.1, 1),
-      genNode([
+      genLeaf([
         [8,4,2,0],
         [2,64,128,2],
         [8,64,4,2],
         [4,2,16,8]
       ], LEFT, 0.9, 1),
-      genNode([
+      genLeaf([
         [8,4,2,0],
         [2,64,128,4],
         [8,64,4,2],
@@ -186,7 +186,7 @@ describe("genLeaves()", () => {
   });
 
   it("generates a 1-step ahead forecast correctly", () => {
-    let result = genLeaves(genNode(grid), 143, 1);
+    let result = genLeaves(genLeaf(grid), 143, 1);
 
     for (let k = 0; k < result.length; k++) {
       expect(JSON.stringify(result[k].grid)).toEqual(JSON.stringify(newNodes[k].grid));
@@ -197,7 +197,7 @@ describe("genLeaves()", () => {
   });
 
   it("generates only nodes at the same max depth", () => {
-    let result = genLeaves(genNode(grid), 143);
+    let result = genLeaves(genLeaf(grid), 143);
     let depth = result[0].depth;
 
     for (let node of result) {
@@ -213,9 +213,9 @@ describe("genLeaves()", () => {
       [8,4,8,4]
     ];
     
-    let result = genLeaves(genNode(grid), 143);
+    let result = genLeaves(genLeaf(grid), 143);
     
-    expect(JSON.stringify(result)).toEqual(JSON.stringify([genNode(grid)]));
+    expect(JSON.stringify(result)).toEqual(JSON.stringify([genLeaf(grid)]));
   });
 
   it("returns empty array when the starting grid is a terminating state", () => {
@@ -226,7 +226,7 @@ describe("genLeaves()", () => {
       [8,4,8,4]
     ];
     
-    let result = genLeaves(genNode(grid), 143);
+    let result = genLeaves(genLeaf(grid), 143);
     
     expect(result).toEqual([]);
   });
@@ -243,5 +243,17 @@ describe("optimMove()", () => {
     let moveCount = 909;
 
     expect(optimMove(grid, moveCount)).toEqual(LEFT);
+  });
+
+  it("wtf is this?", () => {
+    let grid = [
+      [128,512,8,2],
+      [32,256,128,32],
+      [16,64,1024,16],
+      [0,2,4,8]
+    ];
+    let moveCount = 1016;
+
+    expect(optimMove(grid, moveCount)).toEqual("wtf");
   });
 });
