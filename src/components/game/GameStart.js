@@ -27,7 +27,7 @@ const GameStart = props => {
       >
         START
       </Button>
-      <h5>A lightweight fast AI for the resolution of 2048</h5>
+      <h5>An approximate fast AI for the resolution of 2048</h5>
       <p>Spoiler alert: It doesn't always win :(</p>
     </Container>
   );
