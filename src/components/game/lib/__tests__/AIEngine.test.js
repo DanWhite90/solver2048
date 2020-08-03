@@ -1,5 +1,5 @@
 import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, bayesBetaUpdate, genLeaves, genLeaf, optimMove} from "../AIEngine";
+import {monotonicityScore, emptinessScore, mergeabilityScore, bayesBetaUpdate, genLeaves, genLeaf, optimMove} from "../AIEngine";
 
 describe("monotonicityScore()", () => {
 
@@ -87,6 +87,30 @@ describe("emptinessScore()", () => {
     let result = scoringFunctions.get(defaultScoringFunction)(1 / 3);
 
     expect(emptinessScore(inputGrid)).toBeCloseTo(result, 4);
+  });
+});
+
+describe("mergeabilityScore()", () => {
+  it("assigns zero score to non mergeable grids", () => {
+    let grid = [
+      [2,4,2,4],
+      [4,2,4,2],
+      [2,4,2,4],
+      [4,2,4,2]
+    ];
+
+    expect(mergeabilityScore(grid)).toEqual(0);
+  });
+  
+  it("assigns max score to grids with all tiles equal", () => {
+    let grid = [
+      [2,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+    ];
+
+    expect(mergeabilityScore(grid)).toEqual(1);
   });
 });
 
@@ -245,15 +269,15 @@ describe("optimMove()", () => {
     expect(optimMove(grid, moveCount)).toEqual(LEFT);
   });
 
-  it("wtf is this?", () => {
-    let grid = [
-      [128,512,8,2],
-      [32,256,128,32],
-      [16,64,1024,16],
-      [0,2,4,8]
-    ];
-    let moveCount = 1016;
+  // it("wtf is this?", () => {
+  //   let grid = [
+  //     [128,512,8,2],
+  //     [32,256,128,32],
+  //     [16,64,1024,16],
+  //     [0,2,4,8]
+  //   ];
+  //   let moveCount = 1016;
 
-    expect(optimMove(grid, moveCount)).toEqual("wtf");
-  });
+  //   expect(optimMove(grid, moveCount)).toEqual("wtf");
+  // });
 });

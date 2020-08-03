@@ -56,23 +56,58 @@ export const monotonicityScore = (grid, scoreFunc = scoringFunctions.get(default
   }
 
   return scoreFunc((Math.max(incH, decH) + Math.max(incV, decV) - totalMonotonicityDivisor / 2) / totalMonotonicityDivisor * 2);
-}
+};
 
 export const emptinessScore = (grid, scoreFunc = scoringFunctions.get(defaultScoringFunction)) => {
   let freeFraction = zeroCount(grid) / (totalTiles - 1); // -1 because at least 1 tile is non zero at all times, varies between [0, 1]
 
   return scoreFunc(freeFraction);
-}
+};
+
+export const mergeabilityScore = (grid, scoreFunc = scoringFunctions.get(defaultScoringFunction)) => {
+  let mergeable = 0;
+  
+  // optimize for when the grid is square otherwise split in 2 for loops
+  if (GAME_GRID_SIZE_N === GAME_GRID_SIZE_M) {
+
+    for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
+      for (let j = 1; j < GAME_GRID_SIZE_N; j++) {
+        if (grid[i][j] === grid[i][j - 1]) { mergeable++; }
+        if (grid[j][i] === grid[j - 1][i]) { mergeable++; }
+      }
+    }
+
+  } else {
+
+    for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
+      for (let j = 1; j < GAME_GRID_SIZE_M; j++) {
+        if (grid[i][j] === grid[i][j - 1]) { mergeable++; }
+      }
+    }
+  
+    for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
+      for (let i = 1; i < GAME_GRID_SIZE_N; i++) {
+        if (grid[i][j] === grid[i - 1][j]) { mergeable++; }
+      }
+    }
+
+  }
+
+  return scoreFunc(mergeable / totalMonotonicityDivisor);
+};
 
 // Cobb-Douglas utility
 export const utility = grid => {
   const ms = monotonicityScore(grid, scoringFunctions.get(SCORE_LINEAR));
   const es = emptinessScore(grid, scoringFunctions.get(SCORE_LINEAR));
+  const mgs = mergeabilityScore(grid, scoringFunctions.get(SCORE_LINEAR));
 
-  const alpha = 0.4; // weight of emptiness
+  const alpha = 0.28; // weight of emptiness
+  const beta = 0.42; // weight of emptiness
+
   const degree = 4; // degree of homogeneity
 
-  return es ** (degree * alpha) * ms ** (degree * (1 - alpha));
+  return es ** (degree * alpha) * ms ** (degree * beta) * mgs ** (degree * (1 - alpha - beta));
 };
 
 export const bayesBetaUpdate = (grid, moveCount) => (ALPHA + 2 * (moveCount + 1) - 0.5 * gridSum(grid)) / (ALPHA + BETA + moveCount + 1);
@@ -128,7 +163,7 @@ export const genLeaves = (root, moveCount, maxDepth = DEFAULT_TREE_DEPTH) => {
                   // when a new node reaches a new depth, stop if the number of leaves has reached a certain threshold or depth reached a certain level
                   if (
                     curDepth !== newNode.depth && 
-                    (queue.length > FORECAST_TREE_SIZE_THRESHOLD || newNode.depth >= maxDepth)
+                    (queue.length > FORECAST_TREE_SIZE_THRESHOLD || newNode.depth > maxDepth)
                   ) {
                     queue.unshift(curNode);
                     return queue;
@@ -145,7 +180,7 @@ export const genLeaves = (root, moveCount, maxDepth = DEFAULT_TREE_DEPTH) => {
       }
     }
   }
-
+  
   if (maxDepth > 0) {
     // if the queue gets emptied before returning it means that maxDepth step ahead had only game-over states so retries with less depth
     return genLeaves(root, moveCount, maxDepth - 1);
@@ -184,4 +219,4 @@ export const optimMove = (grid, moveCount) => {
   }
 
   return optMove;
-}
+};
