@@ -13,6 +13,7 @@ import {
   FORECAST_TREE_SIZE_THRESHOLD,
   PATH_PROB_THRESHOLD,
   SCORE_LINEAR,
+  DISCOUNT_FACTOR
 } from "../../../globalOptions";
 import {zeroCount, copyGrid, gridSum, processMove} from "./gameEngine";
 import {encodeState, decodeState} from "./encoding";
@@ -219,4 +220,148 @@ export const optimMove = (grid, moveCount) => {
   }
 
   return optMove;
+};
+
+///////////////////////////////////////////////////////////////////////////
+// NEW ENGINE (HAS SOME BUGS, NOT COMPLETE)
+///////////////////////////////////////////////////////////////////////////
+
+// 1) calculate the expectation of each move in the game tree to reduce it to a deterministic game tree
+// where each branch is given only by the move made
+
+// 2) encode the expectation tree in a single array where the index of a child is:
+// c(p, d) = 4*p + d + 1
+// where:
+// - c: is the index of the child
+// - p: is the index of the parent
+// - d: is the direction as UP = 0, LEFT = 1, RIGHT = 2, DOWN = 3
+// the tree is a full complete quadtree, non admissible moves have 0 value by default
+
+// 3) find the first move of the maximizing path through iterative backward induction, recursion is too inefficient in javascript :(
+// p(c, d) = (c - d - 1) / 4
+
+// node of the game tree, not the expected tree
+export const genNode = (grid, path = [], pathProb = 1) => ({
+  grid: encodeState(grid),
+  path,
+  pathProb,
+});
+
+export const getExpectedChildIndex = (parent, direction) => 4 * parent + direction + 1;
+
+export const getExpectedParentIndex = child => parseInt((child - 1) / 4);
+
+export const getMove = child => (child - 1) % 4;
+
+export const getExpectedNodeIndex = (path, root = 0) => {
+  let index = root;
+
+  for (let direction of path) {
+    index = getExpectedChildIndex(index, direction);
+  }
+
+  return index;
+};
+
+export const getExpectedTreeDepth = treeLength => parseInt(Math.log2(3 * treeLength + 1) / 2 - 1);
+
+export const getIndexOfFirstLeaf = treeLength => parseInt((4 ** getExpectedTreeDepth(treeLength) - 1) / 3);
+
+export const genExpectedTree = (root, moveCount, maxDepth = DEFAULT_TREE_DEPTH) => {
+  let tempGrid;
+  let curNode;
+
+  let queue = [root];
+  let prob = bayesBetaUpdate(decodeState(root.grid), moveCount);
+  let curDepth = root.path.length;
+
+  let expectedTree = [0]; // the value of the root is irrelevant default 0, all invalid moves and pruned paths have 0 value
+
+  // iterative breadth-first nodes generation 
+  let canContinue = true;
+  while (canContinue && queue.length) {
+    curNode = queue.shift();
+
+    // process move for each direction
+    for (let direction of [UP, LEFT, RIGHT, DOWN]) {
+      let {newGrid: computedGrid, deltaScore, validMove} = processMove(direction, decodeState(curNode.grid));
+      let n = zeroCount(computedGrid); // number of free slots for uniform distribution of position of new tile
+      let logDS = Math.log2(1 + Math.log2(2 + deltaScore));
+      let tileProb = 0;
+      let curExpectedIndex = getExpectedNodeIndex([...curNode.path, direction]);
+      
+      // expand expectation tree when new depth is acheived
+      if (curExpectedIndex >= expectedTree.length) {
+        expectedTree.push(...new Array(4 ** (curDepth + 1)).fill(0));
+      }
+      
+      if (validMove) {
+
+        // cumulate utility along path
+        expectedTree[curExpectedIndex] = expectedTree[getExpectedParentIndex(curExpectedIndex)];
+
+        // generate 2 and 4 tile for each empty slot after processing the move to compute the expectation
+        for (let i = 0; i < GAME_GRID_SIZE_N; i++) {
+          for (let j = 0; j < GAME_GRID_SIZE_M; j++) {
+            if (computedGrid[i][j] === 0) {
+              for (let value of [2, 4]) {
+                tempGrid = copyGrid(computedGrid);
+                tempGrid[i][j] = value;
+                tileProb = value === 2 ? prob : 1 - prob;
+  
+                let newNode = genNode(
+                  tempGrid, 
+                  [...curNode.path, direction], 
+                  curNode.pathProb * tileProb
+                );
+
+                // deepening and exit conditions
+                if (curDepth !== newNode.path.length) {
+                  curDepth = newNode.path.length;
+                  if (queue.length > FORECAST_TREE_SIZE_THRESHOLD || curDepth >= maxDepth) {
+                    canContinue = false;
+                  }
+                }
+
+                // compute expected utility
+                expectedTree[curExpectedIndex] += DISCOUNT_FACTOR ** curDepth * utility(tempGrid) * tileProb / n * logDS;
+
+                if (canContinue) {
+                  queue.push(newNode);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // if a move is impossible it should be discarded
+        expectedTree[curExpectedIndex] = -Infinity;
+      }
+    }
+  }
+
+  return expectedTree.slice(0, getIndexOfFirstLeaf(expectedTree.length));
+  // return expectedTree;
+}
+
+export const optimalMove = (grid, moveCount) => {
+  let expectedTree = genExpectedTree(genNode(grid), moveCount);
+
+  if (expectedTree.length <= 1) {
+    return null;
+  }
+
+  let maxIndex = getIndexOfFirstLeaf(expectedTree.length);
+
+  for (let index = maxIndex; index < expectedTree.length; index++) {
+    if (expectedTree[index] > expectedTree[maxIndex]) {
+      maxIndex = index;
+    }
+  }
+
+  while (maxIndex > 4) {
+    maxIndex = getExpectedParentIndex(maxIndex);
+  }
+
+  return getMove(maxIndex);
 };

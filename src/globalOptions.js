@@ -102,6 +102,7 @@ export const ALPHA = 9;
 export const BETA = 1;
 
 // Tree parameters
-export const DEFAULT_TREE_DEPTH = 8;
+export const DEFAULT_TREE_DEPTH = 6;
 export const FORECAST_TREE_SIZE_THRESHOLD = 1200;
 export const PATH_PROB_THRESHOLD = 0.25; // geometric average of tiles probabilities - shouldn't exceed 0.722
+export const DISCOUNT_FACTOR = 0.9;

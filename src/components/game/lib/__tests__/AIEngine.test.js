@@ -1,5 +1,26 @@
-import {scoringFunctions, defaultScoringFunction, ALPHA, BETA, UP, LEFT} from "../../../../globalOptions";
-import {monotonicityScore, emptinessScore, mergeabilityScore, bayesBetaUpdate, genLeaves, genLeaf, optimMove} from "../AIEngine";
+import {
+  scoringFunctions, 
+  defaultScoringFunction, 
+  ALPHA, 
+  BETA, 
+  UP, 
+  LEFT, 
+  RIGHT, 
+  DOWN
+} from "../../../../globalOptions";
+import {
+  monotonicityScore, 
+  emptinessScore, 
+  mergeabilityScore, 
+  bayesBetaUpdate, 
+  genLeaves, 
+  genLeaf, 
+  optimMove, 
+  getExpectedChildIndex, 
+  getExpectedParentIndex,
+  getExpectedNodeIndex,
+  getMove,
+} from "../AIEngine";
 
 describe("monotonicityScore()", () => {
 
@@ -280,4 +301,37 @@ describe("optimMove()", () => {
 
   //   expect(optimMove(grid, moveCount)).toEqual("wtf");
   // });
+});
+
+describe("tree indexing functions", () => {
+  it("computes the right child index given parent and move", () => {
+    expect(getExpectedChildIndex(7, DOWN)).toEqual(32);
+  });
+  
+  it("computes the right parent index given child", () => {
+    expect(getExpectedParentIndex(31)).toEqual(7);
+  });
+
+  it("computes the right child for a path from the root", () => {
+    let path = [UP, RIGHT, DOWN];
+
+    expect(getExpectedNodeIndex(path)).toEqual(32);
+  });
+
+  it("computes the right child for a path from a custom root", () => {
+    let path = [LEFT, UP];
+    let root = 2;
+
+    expect(getExpectedNodeIndex(path, root)).toEqual(41);
+  });
+
+  it("returns the root if empty path", () => {
+    let root = 6;
+
+    expect(getExpectedNodeIndex([], root)).toEqual(root);
+  });
+
+  it("gets the move that generated a particular index", () => {
+    expect(getMove(44)).toEqual(DOWN);
+  });
 });

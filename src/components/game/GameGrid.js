@@ -5,7 +5,7 @@ import {connect} from "react-redux";
 import usePrevious from "../../hooks/usePrevious";
 import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS, GAME_OVER} from "../../globalOptions";
 import {addRandomTile, isGameOver, isVictory} from "./lib/gameEngine";
-import {optimMove} from "./lib/AIEngine";
+import {optimMove, optimalMove} from "./lib/AIEngine";
 import * as actions from "../../actions";
 
 import Tile from "./Tile";
@@ -136,6 +136,8 @@ const GameGrid = props => {
         if (animPhaseChanged() || aiActiveChanged()) {
           if (aiActive) {
             let optMove = optimMove(props.grid, props.moveCount);
+            // let optMove = optimalMove(props.grid, props.moveCount);
+            // console.log(`Move: ${props.moveCount}, direction: ${optMove}`);
 
             if (optMove !== null) {
               props.handleMove(optMove, props.grid);
