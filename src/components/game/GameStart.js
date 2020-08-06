@@ -1,6 +1,8 @@
 import React from "react";
 import {connect} from "react-redux";
 import {Container, Button} from "react-bootstrap";
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faFrown} from '@fortawesome/free-regular-svg-icons';
 
 import * as actions from "../../actions";
 import {GAME_STARTED} from "../../globalOptions";
@@ -27,8 +29,8 @@ const GameStart = props => {
       >
         START
       </Button>
-      <h5>An approximate fast AI for the resolution of 2048</h5>
-      <p>Spoiler alert: It doesn't always win :(</p>
+      <h5>An approximate fast AI for 2048</h5>
+      <p>Spoiler alert: It doesn't always win <FontAwesomeIcon icon={faFrown} /></p>
     </Container>
   );
 }
