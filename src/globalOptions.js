@@ -92,7 +92,7 @@ export const scoringFunctions = new Map([
   [SCORE_LINEAR, x => x],
   [SCORE_POWER, x => x ** 0.3], // very sensitive (fast growth) close to 0 but slow after
   [SCORE_NEG_EXP, x => 1 - Math.exp(-5 * x)], // good utility function shape in [0, 1]
-  [SCORE_POS_EXP, x => (2 ** (2 * x) - 1) / (2 ** 5)], // convex, values high scores more
+  [SCORE_POS_EXP, x => (2 ** (7 * x) - 1) / (2 ** 7 - 1)], // convex, values high scores more
   [SCORE_HYPERBOLIC, x => 2 * x / (x + 1)], // concave but not much
   [SCORE_SIGMOID, x => 1 / (1 + Math.exp(-8 * (x - 0.5)))] // significant variation only in [0.2, 0.8]
 ]);
@@ -102,7 +102,11 @@ export const ALPHA = 9;
 export const BETA = 1;
 
 // Tree parameters
+export const MIN_DEPTH = 1;
 export const DEFAULT_TREE_DEPTH = 6;
 export const FORECAST_TREE_SIZE_THRESHOLD = 1200;
 export const PATH_PROB_THRESHOLD = 0.25; // geometric average of tiles probabilities - shouldn't exceed 0.722
 export const DISCOUNT_FACTOR = 0.9;
+
+// Time paramteres
+export const MIN_SEARCH_TIME = 20;

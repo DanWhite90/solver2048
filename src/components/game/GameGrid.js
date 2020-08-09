@@ -5,10 +5,7 @@ import {connect} from "react-redux";
 import usePrevious from "../../hooks/usePrevious";
 import {LEFT, RIGHT, UP, DOWN, directions, ANIM_NONE, ANIM_SLIDE, ANIM_NEW_TILE, TOUCH_SLIDE_MIN_RADIUS, GAME_OVER} from "../../globalOptions";
 import {addRandomTile, isGameOver, isVictory} from "./lib/gameEngine";
-import {
-  optimMove, 
-  // optimalMove,
-} from "./lib/AIEngine";
+import {optimalMove} from "./lib/AIEngine";
 import * as actions from "../../actions";
 
 import Tile from "./Tile";
@@ -138,15 +135,18 @@ const GameGrid = props => {
       case ANIM_NONE:
         if (animPhaseChanged() || aiActiveChanged()) {
           if (aiActive) {
-            let optMove = optimMove(props.grid, props.moveCount);
-            // let optMove = optimalMove(props.grid, props.moveCount);
+            let optMove = optimalMove(props.grid, props.moveCount);
             // console.log(`Move: ${props.moveCount}, direction: ${optMove}`);
 
             if (optMove !== null) {
               props.handleMove(optMove, props.grid);
             } else {
-              // do something to catch up for ending game or pruned paths leave empty stack
-              props.toggleAI();
+              if (isGameOver(props.grid)) {
+                props.toggleAI();
+              } else {
+                // do something to catch up for ending game or pruned paths leave empty stack
+                props.handleMove(Math.floor(Math.random() * 4), props.grid);
+              }
             }
           }
         }

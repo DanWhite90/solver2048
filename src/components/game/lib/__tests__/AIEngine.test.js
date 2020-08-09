@@ -6,12 +6,14 @@ import {
   UP, 
   LEFT, 
   RIGHT, 
-  DOWN
+  DOWN,
+  VICTORY_THRESHOLD,
 } from "../../../../globalOptions";
 import {
   monotonicityScore, 
   emptinessScore, 
   mergeabilityScore, 
+  highestTileScore,
   bayesBetaUpdate, 
   genLeaves, 
   genLeaf, 
@@ -132,6 +134,30 @@ describe("mergeabilityScore()", () => {
     ];
 
     expect(mergeabilityScore(grid)).toEqual(1);
+  });
+});
+
+describe("highestTileScore()", () => {
+  it("assigns the right score to the lowest value", () => {
+    let grid = [
+      [2,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+    ];
+
+    expect(highestTileScore(grid)).toBeCloseTo(1 / Math.log2(VICTORY_THRESHOLD));
+  });
+
+  it("assigns max score to the winning threshold", () => {
+    let grid = [
+      [2,2,2,2],
+      [2,VICTORY_THRESHOLD,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+    ];
+
+    expect(highestTileScore(grid)).toBeCloseTo(1);
   });
 });
 
