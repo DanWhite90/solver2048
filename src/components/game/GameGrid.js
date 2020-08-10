@@ -141,12 +141,13 @@ const GameGrid = props => {
             if (optMove !== null) {
               props.handleMove(optMove, props.grid);
             } else {
-              if (isGameOver(props.grid)) {
-                props.toggleAI();
-              } else {
-                // do something to catch up for ending game or pruned paths leave empty stack
-                props.handleMove(Math.floor(Math.random() * 4), props.grid);
-              }
+              // do something to catch up for ending game or pruned paths leave empty stack
+              // if (isGameOver(props.grid)) {
+              //   props.toggleAI();
+              // } else {
+              //   // props.handleMove(Math.floor(Math.random() * 4), props.grid);
+              // }
+              props.toggleAI();
             }
           }
         }

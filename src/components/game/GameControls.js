@@ -1,7 +1,10 @@
 import React from "react";
 import {Container, Row, Col, Button, Tooltip, OverlayTrigger} from "react-bootstrap";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faArrowUp, faArrowLeft, faArrowRight, faArrowDown} from '@fortawesome/free-solid-svg-icons';
+import {faArrowUp} from '@fortawesome/free-solid-svg-icons/faArrowUp';
+import {faArrowLeft} from '@fortawesome/free-solid-svg-icons/faArrowLeft';
+import {faArrowRight} from '@fortawesome/free-solid-svg-icons/faArrowRight';
+import {faArrowDown} from '@fortawesome/free-solid-svg-icons/faArrowDown';
 import {connect} from "react-redux";
 import * as actions from "../../actions";
 

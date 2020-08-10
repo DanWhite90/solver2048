@@ -1,7 +1,9 @@
 import React from "react";
 import {Container, Row, Col, Button} from "react-bootstrap"; 
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faRedoAlt, faBackward, faBrain} from '@fortawesome/free-solid-svg-icons';
+import {faRedoAlt} from '@fortawesome/free-solid-svg-icons/faRedoAlt';
+import {faBackward} from '@fortawesome/free-solid-svg-icons/faBackward';
+import {faBrain} from '@fortawesome/free-solid-svg-icons/faBrain';
 import {connect} from "react-redux";
 
 import * as actions from "../../actions";

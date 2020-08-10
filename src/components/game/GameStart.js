@@ -2,7 +2,7 @@ import React from "react";
 import {connect} from "react-redux";
 import {Container, Button} from "react-bootstrap";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faFrown} from '@fortawesome/free-regular-svg-icons';
+import {faFrown} from '@fortawesome/free-regular-svg-icons/faFrown';
 
 import * as actions from "../../actions";
 import {GAME_STARTED} from "../../globalOptions";
