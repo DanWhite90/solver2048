@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.css": "/solver2048/static/css/main.64ef8c6d.chunk.css",
+    "main.css": "/solver2048/static/css/main.c098e787.chunk.css",
     "main.js": "/solver2048/static/js/main.becc9d90.chunk.js",
     "main.js.map": "/solver2048/static/js/main.becc9d90.chunk.js.map",
     "runtime-main.js": "/solver2048/static/js/runtime-main.2930d1aa.js",
@@ -9,17 +9,17 @@
     "static/js/2.3421b1c9.chunk.js": "/solver2048/static/js/2.3421b1c9.chunk.js",
     "static/js/2.3421b1c9.chunk.js.map": "/solver2048/static/js/2.3421b1c9.chunk.js.map",
     "index.html": "/solver2048/index.html",
-    "precache-manifest.0d028890355a25b63e5b6b32ea771001.js": "/solver2048/precache-manifest.0d028890355a25b63e5b6b32ea771001.js",
+    "precache-manifest.944f6187e033aa606665769fc1d53ee4.js": "/solver2048/precache-manifest.944f6187e033aa606665769fc1d53ee4.js",
     "service-worker.js": "/solver2048/service-worker.js",
     "static/css/2.af3c1da9.chunk.css.map": "/solver2048/static/css/2.af3c1da9.chunk.css.map",
-    "static/css/main.64ef8c6d.chunk.css.map": "/solver2048/static/css/main.64ef8c6d.chunk.css.map",
+    "static/css/main.c098e787.chunk.css.map": "/solver2048/static/css/main.c098e787.chunk.css.map",
     "static/js/2.3421b1c9.chunk.js.LICENSE.txt": "/solver2048/static/js/2.3421b1c9.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.2930d1aa.js",
     "static/css/2.af3c1da9.chunk.css",
     "static/js/2.3421b1c9.chunk.js",
-    "static/css/main.64ef8c6d.chunk.css",
+    "static/css/main.c098e787.chunk.css",
     "static/js/main.becc9d90.chunk.js"
   ]
 }
