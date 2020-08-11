@@ -25,6 +25,8 @@ body {
   background: linear-gradient(var(--wrapper-gradient), #38ef7d, #11998e); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */  
   box-shadow: rgb(54, 255, 205) 0 0 10px, rgb(59, 120, 250) 0 0 3px;
   height: 100vh;
+  overscroll-behavior: none;
+  overflow: hidden;
 }
 
 .wrapper {
@@ -74,7 +76,6 @@ body {
   width: min(var(--grid-size), var(--grid-max-size));
   margin: 0 auto;
   padding: 0;
-  overscroll-behavior: none;
 }
 
 .grid, .grid-bg {
