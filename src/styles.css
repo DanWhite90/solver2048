@@ -74,6 +74,7 @@ body {
   width: min(var(--grid-size), var(--grid-max-size));
   margin: 0 auto;
   padding: 0;
+  overscroll-behavior: none;
 }
 
 .grid, .grid-bg {
