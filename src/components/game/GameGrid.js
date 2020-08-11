@@ -74,6 +74,10 @@ const GameGrid = props => {
     });
   };
 
+  ////////////////////////////////////////////////////////////
+  // TOUCH HANDLERS
+  ////////////////////////////////////////////////////////////
+
   const handleTouchMoveStart = e => {
     if (!aiActive) {
       touchInfoRef.current = {
@@ -89,6 +93,7 @@ const GameGrid = props => {
 
   const handleTouchMove = e => {
     if (!aiActive) {
+      e.stopPropagation();
       const dx = e.touches[0].clientX - touchInfoRef.current.x;
       const dy = e.touches[0].clientY - touchInfoRef.current.y;
       const r = Math.sqrt(dx**2 + dy**2);
@@ -116,7 +121,10 @@ const GameGrid = props => {
     }
   };
 
-  // add keyboard listener
+  ////////////////////////////////////////////////////////////
+  // KEYBOARD HANDLER
+  ////////////////////////////////////////////////////////////
+
   useEffect(() => {
     const handleKeyboardMove = e => {
       if (!aiActive && directions.has(e.key)) {
@@ -128,7 +136,10 @@ const GameGrid = props => {
     return () => document.removeEventListener("keydown", handleKeyboardMove);
   });
 
-  // handle animation and game flow
+  ////////////////////////////////////////////////////////////
+  // GAME FLOW
+  ////////////////////////////////////////////////////////////
+
   useEffect(() => {
     switch (animPhase) {
 
@@ -189,6 +200,10 @@ const GameGrid = props => {
       default:
     }
   });
+
+  ////////////////////////////////////////////////////////////
+  // RENDER
+  ////////////////////////////////////////////////////////////
 
   return (
     <Container className="grid-wrapper">

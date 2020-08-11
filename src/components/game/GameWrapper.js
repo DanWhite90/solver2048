@@ -5,7 +5,7 @@ import {Transition} from "react-transition-group";
 
 import GameHeader from "./GameHeader";
 import GameGrid from "./GameGrid";
-import GameControls from "./GameControls";
+// import GameControls from "./GameControls";
 
 import * as actions from "../../actions";
 import {processMove} from "./lib/gameEngine";
@@ -49,7 +49,8 @@ const GameWrapper = props => {
         <Container fluid className="wrapper" style={{...defaultStyle, ...transitionStyles[state]}}>
           <GameHeader />
           <GameGrid handleMove={handleMove} />
-          {!props.isTouchDevice && <GameControls handleMove={handleMove} />}
+          {/* {!props.isTouchDevice && <GameControls handleMove={handleMove} />} */}
+          {!props.isTouchDevice && <p style={{fontStyle: "italic"}}>Use arrows or WASD to make a move</p>}
           <Modal 
             show={props.status === GAME_OVER} 
             onHide={handleModalClose}
