@@ -3,6 +3,7 @@ import {connect} from "react-redux";
 import {Container, Button} from "react-bootstrap";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faFrown} from '@fortawesome/free-regular-svg-icons/faFrown';
+import {faGithub} from '@fortawesome/free-brands-svg-icons/faGithub';
 
 import * as actions from "../../actions";
 import {GAME_STARTED} from "../../globalOptions";
@@ -31,6 +32,7 @@ const GameStart = props => {
       </Button>
       <h5>An approximate fast AI for 2048</h5>
       <p>Spoiler alert: It doesn't always win <FontAwesomeIcon icon={faFrown} /></p>
+      <p>For more information visit my <a href="https://github.com/DanWhite90/solver2048"><FontAwesomeIcon icon={faGithub} /> GitHub</a></p>
     </Container>
   );
 }
