@@ -1,68 +1,51 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 2048 Game & AI
 
-## Available Scripts
+### Description
 
-In the project directory, you can run:
+This is a replica of the popular 2048 mobile game, with the addition of a simple AI for solving it. Read below for more technical details.
 
-### `npm start`
+See it in action [here](http://DanWhite90.github.io/solver2048).
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Usage
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+Due to the efficiency concerns I precomputed partial row moves in Rust and stored them into a hashtable callable from JavaScript so `rustc` and `cargo` are required.
 
-### `npm test`
+From `./bin/move_generator/` run:
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+`cargo run --release`
 
-### `npm run build`
+to calculate the partial precomputed moves and then:
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+`npm run build`
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+to build the React application.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Project details
 
-### `npm run eject`
+This is a modern React application with Redux state management and pure CSS animations.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+The game engine:<br />
+- Each and only allowed move is precomputed for a single row as a left move and stored in a hastable to avoind real-time calculation, every other move is obtained by transposition and inversion.
+- Moves effects are compued with a Rust code by an algorithm of O(n) complexity in the length of the array, each move is computed recursively for each disposition with repetition and saved only if it causes a state change.
+- Each move and effect is encoded in one 32 bit integer, 5 bits per possible value encodind the log2 of the value of the tile to compress the data (zero is saved as zero since 1 is not a possible value for a tile), up to 17 (10001) the maximum theoretical tile achievable (131072).
+- Each grid is also encoded in 3 unsigned 32 bit integers, with 5 bits per tile, for compressing the history and the game tree in the AI part.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### AI details
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+The AI engine is designed to work fast and often provide a winning path, even with a shallow search tree and neglecting the full forecast path, specifically:<br />
+- a game tree is generated, branching for each possible move and each possible tile in each possible empty spot after a move calculation in a Breadth-First manner in a queue to generate only the leaves of typically 3-4 steps ahead.
+- The leaves are then used to computed the expected utility (static evaluation) of each possible first move weighted by the log of the number of leaves under one move to favor moves that lead to more possibilities to continue the game.
+- The utility function is a Cobb-Douglas function (from economics) of the heuristics that is especially useful by acting as a "soft-min" in that it doesn't allow any heuristic score to be too low or zero bacause it would lead to a loss so utility is also zero or close to it, while "normal" values are properly weighted.
+- Each heuristic is a function of the grid state taking values in [0, 1], nonlinear adjustments are considered. In order of importance the heuristics are:
+  - Monotonicity: the grid as sample from a 3d surface should have no local optima to make tiles ready for merging.
+  - Emptiness: more free slots increase the probability of continuing the game.
+  - Mergeability: this is a bit tricky. Given the highest tile the existence of smaller tiles (taken as unique, repetition is irrelevant) is penalized as the log2 of the value of the tile below the maximum. This pushes merging towards a state where a high caliber merge is favored supporting a "healthy" emptiness score.
+  - Maximum tile: Provides higher score to grids with higher maximum value of a tile.
+- The probability of a 2-tile appearing is learned with a Bayesian estimator taking each tile as a linearly transformed Bernoulli random variable and assuming a Beta prior distribution to exploit the Beta-Bernoulli conjugate family for a closed-form estimator of the posterior mean.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### Future plans
 
-## Learn More
+There is still a lot of potential on both the software part as well as the AI part, as soon as I have time I'd:
+- Add some backend API serving features like user score saving.
+- Rewrite the AI engine using a full stochastic dynamic programming approach in Rust and compile it to WebAssembly to make it faster especially because of recursion's inefficiency in JavaScript.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
