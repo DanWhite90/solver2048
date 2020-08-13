@@ -47,5 +47,5 @@ The AI engine is designed to work very fast and often provide a winning path, ev
 
 There is still a lot of potential on both the software part as well as the AI part, as soon as I have time I'd:
 - Add some backend API serving features like user score saving.
-- Rewrite the AI engine using a full stochastic dynamic programming approach in Rust and compile it to WebAssembly to make it faster especially because of recursion's inefficiency in JavaScript.
+- Rewrite the AI engine using a full stochastic dynamic programming approach in Rust and compile it to WebAssembly to make it more efficient.
 
