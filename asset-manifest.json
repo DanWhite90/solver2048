@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/solver2048/static/css/main.14280e92.chunk.css",
-    "main.js": "/solver2048/static/js/main.5fb02243.chunk.js",
-    "main.js.map": "/solver2048/static/js/main.5fb02243.chunk.js.map",
+    "main.js": "/solver2048/static/js/main.75edfff2.chunk.js",
+    "main.js.map": "/solver2048/static/js/main.75edfff2.chunk.js.map",
     "runtime-main.js": "/solver2048/static/js/runtime-main.2930d1aa.js",
     "runtime-main.js.map": "/solver2048/static/js/runtime-main.2930d1aa.js.map",
     "static/css/2.af3c1da9.chunk.css": "/solver2048/static/css/2.af3c1da9.chunk.css",
     "static/js/2.6ac39c8b.chunk.js": "/solver2048/static/js/2.6ac39c8b.chunk.js",
     "static/js/2.6ac39c8b.chunk.js.map": "/solver2048/static/js/2.6ac39c8b.chunk.js.map",
     "index.html": "/solver2048/index.html",
-    "precache-manifest.2284813a801e673115c00273248092bd.js": "/solver2048/precache-manifest.2284813a801e673115c00273248092bd.js",
+    "precache-manifest.ce91643921b4210156499098fa7c2c34.js": "/solver2048/precache-manifest.ce91643921b4210156499098fa7c2c34.js",
     "service-worker.js": "/solver2048/service-worker.js",
     "static/css/2.af3c1da9.chunk.css.map": "/solver2048/static/css/2.af3c1da9.chunk.css.map",
     "static/css/main.14280e92.chunk.css.map": "/solver2048/static/css/main.14280e92.chunk.css.map",
@@ -20,6 +20,6 @@
     "static/css/2.af3c1da9.chunk.css",
     "static/js/2.6ac39c8b.chunk.js",
     "static/css/main.14280e92.chunk.css",
-    "static/js/main.5fb02243.chunk.js"
+    "static/js/main.75edfff2.chunk.js"
   ]
 }
