@@ -31,7 +31,7 @@ const GameStart = props => {
         START
       </Button>
       <h5>An approximate fast AI for 2048</h5>
-      <p>Spoiler alert: It doesn't always win <FontAwesomeIcon icon={faFrown} /></p>
+      <p><em>Disclaimer: You can't guarantee victory in a stochastic game <FontAwesomeIcon icon={faFrown} /></em></p>
       <p>For more information visit my <a href="https://github.com/DanWhite90/solver2048"><FontAwesomeIcon icon={faGithub} /> GitHub</a></p>
     </Container>
   );

@@ -43,9 +43,12 @@ The AI engine is designed to work very fast and often provide a winning path, ev
   - Maximum tile: Provides higher score to grids with higher maximum value of a tile (meaning approaching victory).
 - The probability of a 2-tile appearing is learned with a Bayesian estimator taking each tile as a linearly transformed Bernoulli random variable and assuming a Beta prior distribution to exploit the Beta-Bernoulli conjugate family for a closed-form estimator of the posterior mean.
 
+I also made a stochastic dynamic programming version that generates the full expectation tree from the Breadth-First traversal of the game tree, the resulting quadtree is stored in an array with indices satisfying the classical `childIndex(i, parentIndex) = branchingFactor * parentIndex + 1 + i` indexing rule, where each child accumulates the utility along the path so you can find the max utility among the leaves in linear time and then use the index structure to find the first move that generated it.<br />
+This resulted in being a bit slower and required different non path-agnostic heuristics to work fine so I momentarily put it aside.
+
 ### Future plans
 
 There is still a lot of potential on both the software part as well as the AI part, as soon as I have time I'd:
-- Add some backend API serving features like user score saving.
+- Add some backend API serving features like user score saving etc...
 - Rewrite the AI engine using a full stochastic dynamic programming approach in Rust and compile it to WebAssembly to make it more efficient.
 
