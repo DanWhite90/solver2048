@@ -1,0 +1,4 @@
+/*
+This module defines the game engine module.
+Exposes functions for mapping a move to a resulting grid state.
+*/
