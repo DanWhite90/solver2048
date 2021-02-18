@@ -24,4 +24,5 @@ yarn-error.log*
 
 # rust
 /bin/move_generator/target
+/bin/game_ai/target
 /src/components/game/lib/precomputed.js
