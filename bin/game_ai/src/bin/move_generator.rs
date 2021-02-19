@@ -1,7 +1,4 @@
-mod encoding;
-mod game;
-
-use game::moves;
+use game_ai::game::moves;
 
 fn main() {
   println!("This is the move generator");

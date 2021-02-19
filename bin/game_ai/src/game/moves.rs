@@ -14,7 +14,7 @@ use std::fs::File;
 const PATH: &str = "../../src/components/game/lib/precomputed.js";
 const LARGEST_TILE: u32 = 65536;
 
-use super::{GRID_SIDE, DestinationLine};
+use super::{GRID_SIDE, DestinationLine, GridLine};
 
 /*
 Line stacking part
@@ -29,7 +29,7 @@ pub struct StackingResult {
 
 impl StackingResult {
 
-  fn new(prev_line: Vec<u32>, new_line: Vec<u32>, delta_score: u32, destinations: [i8; GRID_SIDE]) -> StackingResult {
+  fn new(prev_line: GridLine, new_line: GridLine, delta_score: u32, destinations: DestinationLine) -> StackingResult {
     StackingResult {
       prev_line: encoding::encode_line(&prev_line),
       new_line: encoding::encode_line(&new_line),
@@ -63,9 +63,9 @@ impl Clone for StackingResult {
   }
 }
 
-fn process_line(line: &Vec<u32>) -> StackingResult {
-  let mut new_line: Vec<u32> = vec![0; 4];
-  let mut destinations: DestinationLine = [0; 4];
+fn process_line(line: &GridLine) -> StackingResult {
+  let mut new_line: GridLine = [0; GRID_SIDE];
+  let mut destinations: DestinationLine = [0; GRID_SIDE];
   let mut delta_score = 0;
   let mut k = 0;
 
@@ -89,7 +89,7 @@ fn process_line(line: &Vec<u32>) -> StackingResult {
     }
   }
 
-  StackingResult::new(line.clone(), new_line, delta_score, destinations)
+  StackingResult::new(*line, new_line, delta_score, destinations)
 }
 
 /*
@@ -136,10 +136,10 @@ enum Store<'a> {
   HashMap(&'a mut HashMap<u32, StackingResult>),
 }
 
-fn traverse_row<'a>(row: &'a Vec<u32>, position: usize, store: &mut Store) {
+fn traverse_row<'a>(row: &GridLine, position: usize, store: &mut Store) {
   if position < row.len() {
     for num in AdmissibleValues::new(0) {
-      let mut new_row = Vec::clone(&row);
+      let mut new_row = *row;
       new_row[position] = num;
       traverse_row(&new_row, position + 1, store);
     }
@@ -165,7 +165,7 @@ pub fn make_precomputed_js() {
 export const precomputed = new Map([\n".as_bytes()).expect("Error in writing header!");
 
   //Generate moves
-  traverse_row(&vec![0, 0, 0, 0], 0, &mut Store::File(&mut file));
+  traverse_row(&[0, 0, 0, 0], 0, &mut Store::File(&mut file));
 
   // Footer
   file.write("]);".as_bytes()).expect("Error in writing footer!");
@@ -178,7 +178,7 @@ pub fn make_precomputed_hashmap() -> HashMap<u32, StackingResult> {
   let mut moves_table: HashMap<u32, StackingResult> = HashMap::new();
 
   //Generate moves
-  traverse_row(&vec![0, 0, 0, 0], 0, &mut Store::HashMap(&mut moves_table));
+  traverse_row(&[0, 0, 0, 0], 0, &mut Store::HashMap(&mut moves_table));
 
   moves_table
 }
@@ -191,43 +191,43 @@ mod tests {
   // Test stacking
   #[test]
   fn stacks_empty_correctly() {
-    let res = super::process_line(&vec![0, 0, 0, 0]);
+    let res = super::process_line(&[0, 0, 0, 0]);
 
-    assert_eq!(res.new_line, super::encoding::encode_line(&vec![0, 0, 0, 0]));
+    assert_eq!(res.new_line, super::encoding::encode_line(&[0, 0, 0, 0]));
   }
   
   #[test]
   fn stacks_some_correctly() {
-    let res = super::process_line(&vec![4, 4, 2, 2]);
+    let res = super::process_line(&[4, 4, 2, 2]);
 
-    assert_eq!(res.new_line, super::encoding::encode_line(&vec![8, 4, 0, 0]));
+    assert_eq!(res.new_line, super::encoding::encode_line(&[8, 4, 0, 0]));
   }
   
   #[test]
   fn stacks_corner_correctly() {
-    let res = super::process_line(&vec![2, 2, 2, 2]);
+    let res = super::process_line(&[2, 2, 2, 2]);
 
-    assert_eq!(res.new_line, super::encoding::encode_line(&vec![4, 4, 0, 0]));
+    assert_eq!(res.new_line, super::encoding::encode_line(&[4, 4, 0, 0]));
   }
 
   // Test scoring
   #[test]
   fn computes_null_score_correctly() {
-    let res = super::process_line(&vec![8, 4, 2, 0]);
+    let res = super::process_line(&[8, 4, 2, 0]);
 
     assert_eq!(res.delta_score, 0);
   }
 
   #[test]
   fn computes_corner_score_correctly() {
-    let res = super::process_line(&vec![4, 4, 4, 4]);
+    let res = super::process_line(&[4, 4, 4, 4]);
 
     assert_eq!(res.delta_score, 16);
   }
 
   #[test]
   fn computes_large_score_correctly() {
-    let res = super::process_line(&vec![32768, 32768, 2, 2]);
+    let res = super::process_line(&[32768, 32768, 2, 2]);
 
     assert_eq!(res.delta_score, 65540);
   }
@@ -235,22 +235,22 @@ mod tests {
   // Test moving
   #[test]
   fn computes_null_movement_correctly() {
-    let res = super::process_line(&vec![8, 4, 2, 0]);
+    let res = super::process_line(&[8, 4, 2, 0]);
 
-    assert_eq!(res.destinations, vec![0, 0, 0, 0]);
+    assert_eq!(res.destinations, [0, 0, 0, 0]);
   }
 
   #[test]
   fn computes_corner_movement_correctly() {
-    let res = super::process_line(&vec![4, 4, 4, 4]);
+    let res = super::process_line(&[4, 4, 4, 4]);
 
-    assert_eq!(res.destinations, vec![0, -1, -1, -2]);
+    assert_eq!(res.destinations, [0, -1, -1, -2]);
   }
 
   #[test]
   fn computes_sparse_movement_correctly() {
-    let res = super::process_line(&vec![4, 0, 2, 2]);
+    let res = super::process_line(&[4, 0, 2, 2]);
 
-    assert_eq!(res.destinations, vec![0, 0, -1, -2]);
+    assert_eq!(res.destinations, [0, 0, -1, -2]);
   }
 }

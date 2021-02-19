@@ -176,10 +176,38 @@ pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32
 #[cfg(test)]
 mod tests {
 
-  const moves_table: super::HashMap<u32, super::StackingResult> = crate::game::moves::make_precomputed_hashmap();
+  use super::*;
+
 
   #[test]
   pub fn test_process_move() {
-    // let grid: 
+    let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
+
+    let grid: Grid = Grid::new(&vec![
+      0, 2, 2, 0,
+      2, 2, 2, 2,
+      0, 0, 4, 0,
+      8, 0, 4, 2
+    ]);
+
+    let new_grid: Grid = Grid::new(&vec![
+      4, 0, 0, 0,
+      4, 4, 0, 0,
+      4, 0, 0, 0,
+      8, 4, 2, 0
+    ]);
+
+    let dest_grid: DestinationGrid = [
+      [0, -1, -2, 0],
+      [0, -1, -1, -2],
+      [0, 0, -2, 0],
+      [0, 0, -1, -1],
+    ];
+
+    let result: MoveResult = process_move(Move::Left, grid, &moves_table);
+
+    assert_eq!(result.get_new_grid(), new_grid.get_encoded_state());
+    assert_eq!(result.get_delta_score(), 4 + 4 + 4);
+    assert_eq!(result.get_destination_grid(), dest_grid);
   }
 }

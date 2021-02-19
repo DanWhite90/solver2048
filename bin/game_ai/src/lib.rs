@@ -1,5 +1,5 @@
-mod encoding;
-mod game;
+pub mod encoding;
+pub mod game;
 mod ai;
 
 /*
