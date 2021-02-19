@@ -56,6 +56,12 @@ mod tests {
     let row = [65536, 65536, 65536, 65536];
     assert_eq!(super::encode_line(&row), 541200);
   }
+  
+  #[test]
+  fn correct_critical_encoding() {
+    let row = [0, 2, 4, 8];
+    assert_eq!(super::encode_line(&row), 100384);
+  }
 
   // testing for decode_line()
   #[test]

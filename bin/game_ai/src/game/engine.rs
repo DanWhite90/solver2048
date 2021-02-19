@@ -7,7 +7,8 @@ use crate::encoding;
 use super::moves::StackingResult;
 use std::collections::HashMap;
 
-use super::{GRID_SIDE, GRID_SIZE, DestinationGrid, EncodedGrid, DecodedGrid};
+use super::{GRID_SIDE, DestinationGrid, EncodedGrid, DecodedGrid};
+
 
 pub enum Move {
   Up = 0,
@@ -16,71 +17,82 @@ pub enum Move {
   Down = 3,
 }
 
+
+// Grid
+
 pub struct Grid {
   encoded_state: EncodedGrid,
 }
 
 impl Grid {
 
-  fn validate_new(tiles: &[u32]) {
+  pub fn new(tiles: &DecodedGrid) -> Grid {
+    // validation ignored for performance
 
-    // validate length
-    if tiles.len() < GRID_SIZE {
-      panic!("Need {size} tiles to construct a grid {len} provided", size = GRID_SIZE, len = tiles.len());
-    }
-
-    // validate content as powers of 2
-    for tile in &tiles[0..GRID_SIZE] {
-      let mut value: usize = *tile as usize;
-      let mut count: usize = 0;
-
-      while value > 0 {  
-        if value % 2 > 0 {
-          count += 1;
-        }
-        value /= 2;
-  
-        if count > 1 {
-          panic!("At least one of the numbers provided in the list is not a power of 2");
-        }
-      }
-
-    }
-
-  }
-
-  // should validate length and admissible values
-  pub fn new(tiles: &[u32]) -> Grid {
-    // Grid::validate_new(tiles);
-
-    let mut state: EncodedGrid = [0; GRID_SIDE];
-
-    for i in 0..GRID_SIDE {
-      state[i] = encoding::encode_line(&tiles[(i * GRID_SIDE) .. ((i + 1) * GRID_SIDE)])
-    }
+    let state: EncodedGrid = Grid::encode_state(tiles);
 
     Grid {encoded_state: state}
   }
 
-  // Getter
+  // Getters
   pub fn get_encoded_state(&self) -> EncodedGrid {
     self.encoded_state
   }
 
-  pub fn transpose(&mut self) -> &mut Self {
-
+  pub fn get_decoded_state(&self) -> DecodedGrid {
     let mut decoded_grid: DecodedGrid = [[0; GRID_SIDE]; GRID_SIDE];
 
-    let mut i: usize = 0;
-    for encoded_line in &self.encoded_state {
-      decoded_grid[i] = encoding::decode_line(*encoded_line);
-      i += 1;
+    for (i, &encoded_line) in self.encoded_state.iter().enumerate() {
+      decoded_grid[i] = encoding::decode_line(encoded_line);
     }
+
+    decoded_grid
+  }
+
+  // Other features
+  fn encode_state(decoded_grid: &DecodedGrid) -> EncodedGrid {
+    let mut grid: EncodedGrid = [0; GRID_SIDE];
+
+    for (i, decoded_line) in decoded_grid.iter().enumerate() {
+      grid[i] = encoding::encode_line(decoded_line);
+    }
+
+    grid
+  }
+
+  pub fn transpose(&mut self) -> &mut Self {
+
+    let mut decoded_grid: DecodedGrid = self.get_decoded_state();
+
+    let mut tmp: u32;
+    for i in 0..GRID_SIDE {
+      for j in (i + 1)..GRID_SIDE {
+        tmp = decoded_grid[i][j];
+        decoded_grid[i][j] = decoded_grid[j][i];
+        decoded_grid[j][i] = tmp;
+      }
+    }
+    
+    self.encoded_state = Grid::encode_state(&decoded_grid);
 
     self
   }
 
   pub fn reverse(&mut self) -> &mut Self {
+
+    let mut decoded_grid: DecodedGrid = self.get_decoded_state();
+
+    let mut tmp: u32;
+    for i in 0..GRID_SIDE {
+      for j in 0..(GRID_SIDE / 2) {
+        tmp = decoded_grid[i][j];
+        decoded_grid[i][j] = decoded_grid[i][GRID_SIDE - 1 - j];
+        decoded_grid[i][GRID_SIDE - 1 - j] = tmp;
+      }
+    }
+    
+    self.encoded_state = Grid::encode_state(&decoded_grid);
+
     self
   }
 
@@ -96,6 +108,9 @@ impl Clone for Grid {
     *self
   }
 }
+
+
+// MoveResult
 
 pub struct MoveResult {
   prev_grid: EncodedGrid,
@@ -123,6 +138,9 @@ impl MoveResult {
 
 }
 
+
+// Traits for MoveResult
+
 impl Copy for MoveResult {}
 
 impl Clone for MoveResult {
@@ -130,6 +148,7 @@ impl Clone for MoveResult {
     *self
   }
 }
+
 
 // Public API
 
@@ -164,7 +183,7 @@ pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32
     Move::Up => grid.transpose(),
     Move::Left => &mut grid,
     Move::Right => grid.reverse(),
-    Move::Down => grid.transpose().reverse(),
+    Move::Down => grid.reverse().transpose(),
   };
 
   MoveResult::new(prev_grid.get_encoded_state(), grid.get_encoded_state(), tot_delta_score, dest_grid)
@@ -179,35 +198,136 @@ mod tests {
   use super::*;
 
 
-  #[test]
-  pub fn test_process_move() {
-    let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
+  // Grid
 
-    let grid: Grid = Grid::new(&vec![
-      0, 2, 2, 0,
-      2, 2, 2, 2,
-      0, 0, 4, 0,
-      8, 0, 4, 2
+  #[test]
+  pub fn test_grid_encode_state() {
+    let encoded_state: EncodedGrid = Grid::encode_state(&[
+      [0, 2, 4, 8],
+      [4, 4, 4, 4],
+      [8, 8, 4, 4],
+      [8, 4, 2, 2],
     ]);
 
-    let new_grid: Grid = Grid::new(&vec![
-      4, 0, 0, 0,
-      4, 4, 0, 0,
-      4, 0, 0, 0,
-      8, 4, 2, 0
+    assert_eq!(encoded_state, [100384, 67650, 67683, 33859]);
+  }
+
+  #[test]
+  pub fn test_grid_get_decoded_state() {
+    let decoded_grid: DecodedGrid = [
+      [0, 2, 4, 8],
+      [4, 4, 4, 4],
+      [8, 8, 4, 4],
+      [8, 4, 2, 2],
+    ];
+
+    let grid: Grid = Grid::new(&decoded_grid);
+
+    assert_eq!(grid.get_decoded_state(), decoded_grid);
+  }
+
+  #[test]
+  pub fn test_grid_transpose() {
+    let mut grid: Grid = Grid::new(&[
+      [0, 2, 4, 8],
+      [4, 4, 4, 4],
+      [8, 8, 4, 4],
+      [8, 4, 2, 2],
+    ]);
+
+    let res: Grid = Grid::new(&[
+      [0, 4, 8, 8],
+      [2, 4, 8, 4],
+      [4, 4, 4, 2],
+      [8, 4, 4, 2],
+    ]);
+
+    assert_eq!(grid.transpose().encoded_state, res.encoded_state);
+  }
+
+  #[test]
+  pub fn test_grid_reverse() {
+    let mut grid: Grid = Grid::new(&[
+      [0, 2, 4, 8],
+      [4, 4, 4, 4],
+      [8, 8, 4, 4],
+      [8, 4, 2, 2],
+    ]);
+
+    let res: Grid = Grid::new(&[
+      [8, 4, 2, 0],
+      [4, 4, 4, 4],
+      [4, 4, 8, 8],
+      [2, 2, 4, 8],
+    ]);
+
+    assert_eq!(grid.reverse().encoded_state, res.encoded_state);
+  }
+
+
+  // process_move()
+
+  #[test]
+  pub fn test_up_move() {
+    let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
+
+    let grid: Grid = Grid::new(&[
+      [0, 2, 2, 0],
+      [2, 2, 2, 2],
+      [0, 0, 4, 0],
+      [8, 0, 4, 2],
+    ]);
+
+    let new_grid: Grid = Grid::new(&[
+      [2, 4, 4, 4],
+      [8, 0, 8, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
     ]);
 
     let dest_grid: DestinationGrid = [
-      [0, -1, -2, 0],
-      [0, -1, -1, -2],
-      [0, 0, -2, 0],
-      [0, 0, -1, -1],
+      [0, 0, 0, 0],
+      [-1, -1, -1, -1],
+      [0, 0, -1, 0],
+      [-2, 0, -2, -1],
     ];
 
-    let result: MoveResult = process_move(Move::Left, grid, &moves_table);
+    let result: MoveResult = process_move(Move::Up, grid, &moves_table);
 
     assert_eq!(result.get_new_grid(), new_grid.get_encoded_state());
-    assert_eq!(result.get_delta_score(), 4 + 4 + 4);
+    assert_eq!(result.get_delta_score(), 20);
+    assert_eq!(result.get_destination_grid(), dest_grid);
+  }
+
+  #[test]
+  pub fn test_down_move() {
+    let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
+
+    let grid: Grid = Grid::new(&[
+      [0, 2, 2, 0],
+      [2, 2, 2, 2],
+      [0, 0, 4, 0],
+      [8, 0, 4, 2],
+    ]);
+
+    let new_grid: Grid = Grid::new(&[
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [2, 0, 4, 0],
+      [8, 4, 8, 4],
+    ]);
+
+    let dest_grid: DestinationGrid = [
+      [0, 3, 2, 0],
+      [1, 2, 1, 2],
+      [0, 0, 1, 0],
+      [0, 0, 0, 0],
+    ];
+
+    let result: MoveResult = process_move(Move::Down, grid, &moves_table);
+
+    assert_eq!(result.get_new_grid(), new_grid.get_encoded_state());
+    assert_eq!(result.get_delta_score(), 20);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }
 }
