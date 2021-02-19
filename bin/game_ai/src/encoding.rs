@@ -1,11 +1,11 @@
 /*
 This module allows for encoding and decoding a row state into and from a u32 number
+Given the code is internal to the library no validation of the inputs is executed for maximum performance
 */
 
 const ENCODING_BITS: u32 = 5;
 
-#[allow(dead_code)]
-pub fn encode_row(row: &[u32]) -> u32 {
+pub fn encode_line(row: &[u32]) -> u32 {
   let mut num = 0;
   let mut count = 0;
 
@@ -18,8 +18,7 @@ pub fn encode_row(row: &[u32]) -> u32 {
   num
 }
 
-#[allow(dead_code)]
-pub fn decode_row(mut num: u32) -> [u32; 4] {
+pub fn decode_line(mut num: u32) -> [u32; 4] {
   let mut row = [0, 0, 0, 0];
   let mut tile;
 
@@ -33,41 +32,44 @@ pub fn decode_row(mut num: u32) -> [u32; 4] {
   row
 }
 
+
+// Unit Tests
+
 #[cfg(test)]
 mod tests {
 
-  // testing for encode_row()
+  // testing for encode_line()
   #[test]
   fn correct_zero_encoding() {
     let row = [0, 0, 0, 0];
-    assert_eq!(super::encode_row(&row), 0);
+    assert_eq!(super::encode_line(&row), 0);
   }
   
   #[test]
   fn correct_random_encoding() {
     let row = [8, 4, 2, 0];
-    assert_eq!(super::encode_row(&row), 1091);
+    assert_eq!(super::encode_line(&row), 1091);
   }
   
   #[test]
   fn correct_large_encoding() {
     let row = [65536, 65536, 65536, 65536];
-    assert_eq!(super::encode_row(&row), 541200);
+    assert_eq!(super::encode_line(&row), 541200);
   }
 
-  // testing for decode_row()
+  // testing for decode_line()
   #[test]
   fn correct_zero_decoding() {
-    assert_eq!(super::decode_row(0), [0, 0, 0, 0]);
+    assert_eq!(super::decode_line(0), [0, 0, 0, 0]);
   }
   
   #[test]
   fn correct_random_decoding() {
-    assert_eq!(super::decode_row(1091), [8, 4, 2, 0]);
+    assert_eq!(super::decode_line(1091), [8, 4, 2, 0]);
   }
   
   #[test]
   fn correct_large_decoding() {
-    assert_eq!(super::decode_row(541200), [65536, 65536, 65536, 65536]);
+    assert_eq!(super::decode_line(541200), [65536, 65536, 65536, 65536]);
   }
 }
