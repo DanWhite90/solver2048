@@ -20,7 +20,6 @@ pub struct Grid {
   encoded_state: EncodedGrid,
 }
 
-#[allow(dead_code)]
 impl Grid {
 
   fn validate_new(tiles: &[u32]) {
@@ -105,7 +104,6 @@ pub struct MoveResult {
   destination_grid: DestinationGrid,
 }
 
-#[allow(dead_code)]
 impl MoveResult {
 
   pub fn new(prev: EncodedGrid, new: EncodedGrid, delta: u32, dest: DestinationGrid) -> Self {

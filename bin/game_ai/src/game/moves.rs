@@ -154,7 +154,6 @@ fn traverse_row<'a>(row: &'a Vec<u32>, position: usize, store: &mut Store) {
   }
 }
 
-#[allow(dead_code)]
 pub fn make_precomputed_js() {
   
   let mut file = File::create(PATH).expect("Error in creating file!");

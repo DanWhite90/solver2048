@@ -2,6 +2,8 @@
 This module should define the function that generates the precomputed moves as well as the engine
 */
 
+#![allow(dead_code)]
+
 const GRID_SIDE: usize = 4;
 const GRID_SIZE: usize = GRID_SIDE * GRID_SIDE;
 
