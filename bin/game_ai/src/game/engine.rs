@@ -3,8 +3,6 @@ This module defines the game engine module.
 Exposes functions for mapping a move to a resulting grid state.
 */
 
-use crate::encoding;
-use super::moves::StackingResult;
 use std::collections::HashMap;
 
 use super::*;
@@ -152,7 +150,7 @@ impl Clone for MoveResult {
 // Public API
 //////////////////////////////////////////////////
 
-pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32, StackingResult>) -> MoveResult {
+pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32, LineStackingResult>) -> MoveResult {
   let prev_grid = grid;
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid: DestinationGrid = [[0; GRID_SIDE]; GRID_SIDE];
@@ -280,7 +278,7 @@ mod tests {
 
   #[test]
   pub fn test_up_move() {
-    let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
     let grid: Grid = Grid::new(&[
       [0, 2, 2, 0],
@@ -313,7 +311,7 @@ mod tests {
   #[test]
   #[ignore]
   pub fn test_down_move() {
-    let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
     let grid: Grid = Grid::new(&[
       [0, 2, 2, 0],

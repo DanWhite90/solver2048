@@ -1,118 +1,33 @@
-/*
-This module defines how the stacking of a single row/column is processed. 
-All the other possibilities can be acheived through transposition and reversion of a single row or column.
-Primarily used to separate game engine logic from precomputation of moves.
-*/
+//! # `moves` module
+//! 
+//! This module defines how the stacking of a single row/column is processed. 
+//! All the other possibilities can be acheived through transposition and reversion of a single row or column.
+//! Primarily used to separate game engine logic from precomputation of moves.
 
-use std::io::prelude::*;
-
-use crate::encoding;
 use std::collections::HashMap;
 
-use std::fs::File;
+use super::*;
 
-const PATH: &str = "../../src/components/game/lib/precomputed.js";
 const LARGEST_TILE: u32 = 65536;
 
-use super::{GRID_SIDE, DestinationLine, GridLine};
 
-//////////////////////////////////////////////////
-// Single row move processing result
-//////////////////////////////////////////////////
+//------------------------------------------------
+// Definitions
+//------------------------------------------------
 
-pub struct StackingResult {
-  prev_line: u32,
-  new_line: u32,
-  delta_score: u32,
-  destinations: DestinationLine,
-}
-
-impl StackingResult {
-
-  fn new(prev_line: &GridLine, new_line: &GridLine, delta_score: u32, destinations: &DestinationLine) -> StackingResult {
-    StackingResult {
-      prev_line: encoding::encode_line(prev_line),
-      new_line: encoding::encode_line(new_line),
-      delta_score,
-      destinations: *destinations,
-    }
-  }
-
-  // Getters
-  pub fn get_prev_line(&self) -> u32 { self.prev_line }
-  pub fn get_new_line(&self) -> u32 { self.new_line }
-  pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destinations<'a>(&'a self) -> DestinationLine { self.destinations }
-
-  // #[allow(dead_code)]
-  // pub fn format_js(&self) -> String {
-  //   format!("[{}, {{newRow: {}, ds: {}, destRow: {:?}}}],\n", self.prev_line, self.new_line, self.delta_score, self.destinations)
-  // }
-
-  #[allow(dead_code)]
-  pub fn format_js_array(&self) -> String {
-    format!("[{}, [{}, {}, {:?}]],\n", self.prev_line, self.new_line, self.delta_score, self.destinations)
-  }
-}
-
-impl Copy for StackingResult {}
-
-impl Clone for StackingResult {
-  fn clone(&self) -> Self {
-    *self
-  }
-}
-
-fn process_line(line: &GridLine) -> StackingResult {
-  let mut new_line: GridLine = [0; GRID_SIDE];
-  let mut destinations: DestinationLine = [0; GRID_SIDE];
-  let mut delta_score = 0;
-  let mut k = 0;
-
-  for i in 0..4 {
-
-    // move only non-zero tiles
-    if line[i] != 0 {
-
-      // if new line current tile equal to old line current tile, merge and point to next current tile in new line
-      if new_line[k] == line[i] {
-        new_line[k] += line[i];
-        delta_score += new_line[k];
-        destinations[i] = k as i8 - i as i8;
-        k += 1;
-
-      // if not equal
-      } else {
-
-        // assign old line's current tile to the first empty slot available in the new line, 
-        if new_line[k] != 0 {
-          k += 1;
-        }
-        new_line[k] = line[i];
-
-        destinations[i] = k as i8 - i as i8;
-      }
-
-    }
-
-  }
-
-  StackingResult::new(line, &new_line, delta_score, &destinations)
-}
-
-//////////////////////////////////////////////////
-// Move Precomputation
-//////////////////////////////////////////////////
-
-struct AdmissibleValues {
+struct AdmissibleTileValue {
   value: u32,
   prev: u32,
 }
 
-impl AdmissibleValues {
+//------------------------------------------------
+// Implementations
+//------------------------------------------------
 
-  fn new(value: u32) -> AdmissibleValues {
-    AdmissibleValues {
+impl AdmissibleTileValue {
+
+  fn new(value: u32) -> AdmissibleTileValue {
+    AdmissibleTileValue {
       value,
       prev: 0,
     }
@@ -120,7 +35,7 @@ impl AdmissibleValues {
 
 }
 
-impl Iterator for AdmissibleValues {
+impl Iterator for AdmissibleTileValue {
   type Item = u32;
 
   fn next(&mut self) -> Option<Self::Item> {
@@ -139,42 +54,83 @@ impl Iterator for AdmissibleValues {
   }
 }
 
-enum Store<'a> {
-  File(&'a mut File),
-  HashMap(&'a mut HashMap<u32, StackingResult>),
+//------------------------------------------------
+// Functions
+//------------------------------------------------
+
+/// Stacks a single row to the left according to the 2048 game rules
+fn process_line(line: &GridLine) -> LineStackingResult {
+  let mut new_line: GridLine = [0; GRID_SIDE];
+  let mut destinations: DestinationLine = [0; GRID_SIDE];
+  let mut delta_score = 0;
+  let mut k = 0;
+
+  for i in 0..4 {
+
+    // move only non-zero tiles
+    if line[i] != 0 {
+
+      // if current tile in new line is equal to current tile in old line, merge and point to next current tile in new line
+      if new_line[k] == line[i] {
+        new_line[k] += line[i];
+        delta_score += new_line[k];
+        destinations[i] = k as i8 - i as i8;
+        k += 1;
+
+      } else {
+
+        // assign old line's current tile to the first empty slot available in the new line from the left, and update movement displacement
+        if new_line[k] != 0 {
+          k += 1;
+        }
+        new_line[k] = line[i];
+
+        destinations[i] = k as i8 - i as i8;
+      }
+
+    }
+
+  }
+
+  LineStackingResult::new(line, &new_line, delta_score, &destinations)
 }
 
-fn traverse_row<'a>(row: &GridLine, position: usize, store: &mut Store) {
+/// Function that recursively generates only and all the admissible row states to be encoded and saved in a `HashMap`
+fn traverse_row(row: &GridLine, position: usize, moves_table: &mut HashMap<u32, LineStackingResult>) {
+
   if position < row.len() {
-    for num in AdmissibleValues::new(0) {
+
+    // loop through all the admissible values for each tile position in the row
+    for num in AdmissibleTileValue::new(0) {
       let mut new_row = *row;
       new_row[position] = num;
-      traverse_row(&new_row, position + 1, store);
+      traverse_row(&new_row, position + 1, moves_table);
     }
+
   } else {
     let res = process_line(row);
+
+    // Store only effectful moves, ineffectful moves always return the same state, 0 score, and no displacement
     if res.get_prev_line() != res.get_new_line() {  
-      match store {
-        Store::File(f) => {f.write(res.format_js_array().as_bytes()).expect("Error in writing record!"); ()},
-        Store::HashMap(hm) => {hm.insert(res.get_prev_line(), res); ()},
-      }
+      moves_table.insert(res.get_prev_line(), res);
     }
+
   }
 }
 
-pub fn make_precomputed_hashmap() -> HashMap<u32, StackingResult> {
-  let mut moves_table: HashMap<u32, StackingResult> = HashMap::new();
+pub fn make_precomputed_hashmap() -> HashMap<u32, LineStackingResult> {
+  let mut moves_table: HashMap<u32, LineStackingResult> = HashMap::new();
 
   //Generate moves
-  traverse_row(&[0, 0, 0, 0], 0, &mut Store::HashMap(&mut moves_table));
+  traverse_row(&[0, 0, 0, 0], 0, &mut moves_table);
 
   moves_table
 }
 
 
-//////////////////////////////////////////////////
+//------------------------------------------------
 // Unit tests
-//////////////////////////////////////////////////
+//------------------------------------------------
 
 #[cfg(test)]
 mod tests {
