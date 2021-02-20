@@ -4,6 +4,11 @@ This module should define the function that generates the precomputed moves as w
 
 #![allow(dead_code)]
 
+pub mod moves;
+pub mod engine;
+
+
+
 const GRID_SIDE: usize = 4;
 const GRID_SIZE: usize = GRID_SIDE * GRID_SIDE;
 
@@ -25,7 +30,3 @@ pub trait GridLike {}
 
 impl GridLike for DestinationGrid {}
 impl GridLike for DecodedGrid {}
-
-pub mod core;
-pub mod moves;
-pub mod engine;

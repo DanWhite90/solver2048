@@ -1,3 +1,0 @@
-/*
-This module defines the core types and traits for the game
-*/

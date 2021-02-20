@@ -162,26 +162,6 @@ fn traverse_row<'a>(row: &GridLine, position: usize, store: &mut Store) {
   }
 }
 
-pub fn make_precomputed_js() {
-  
-  let mut file = File::create(PATH).expect("Error in creating file!");
-
-  // Header 
-  file.write("
-// contains only valid left stacking single row moves, all the others can be derived from these
-// the key in Map is the current encoded row, the value is an array with [new_encoded_row, score, destination_array]
-export const precomputed = new Map([\n".as_bytes()).expect("Error in writing header!");
-
-  //Generate moves
-  traverse_row(&[0, 0, 0, 0], 0, &mut Store::File(&mut file));
-
-  // Footer
-  file.write("]);".as_bytes()).expect("Error in writing footer!");
-
-  file.flush().unwrap();
-  
-}
-
 pub fn make_precomputed_hashmap() -> HashMap<u32, StackingResult> {
   let mut moves_table: HashMap<u32, StackingResult> = HashMap::new();
 

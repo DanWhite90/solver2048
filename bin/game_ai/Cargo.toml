@@ -5,6 +5,12 @@ authors = ["Daniele Bianchin <bianchin.daniele.b@gmail.com>"]
 edition = "2018"
 
 [lib]
+name = "game_ai"
+path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "move_generator"
+path = "src/bin/move_generator.rs"
 
 [dependencies]
