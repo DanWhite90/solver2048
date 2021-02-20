@@ -16,9 +16,9 @@ const LARGEST_TILE: u32 = 65536;
 
 use super::{GRID_SIDE, DestinationLine, GridLine};
 
-/*
-Line stacking part
-*/
+//////////////////////////////////////////////////
+// Single row move processing result
+//////////////////////////////////////////////////
 
 pub struct StackingResult {
   prev_line: u32,
@@ -29,12 +29,12 @@ pub struct StackingResult {
 
 impl StackingResult {
 
-  fn new(prev_line: GridLine, new_line: GridLine, delta_score: u32, destinations: DestinationLine) -> StackingResult {
+  fn new(prev_line: &GridLine, new_line: &GridLine, delta_score: u32, destinations: &DestinationLine) -> StackingResult {
     StackingResult {
-      prev_line: encoding::encode_line(&prev_line),
-      new_line: encoding::encode_line(&new_line),
+      prev_line: encoding::encode_line(prev_line),
+      new_line: encoding::encode_line(new_line),
       delta_score,
-      destinations,
+      destinations: *destinations,
     }
   }
 
@@ -70,31 +70,39 @@ fn process_line(line: &GridLine) -> StackingResult {
   let mut k = 0;
 
   for i in 0..4 {
-    let j = i as i8;
+
+    // move only non-zero tiles
     if line[i] != 0 {
+
+      // if new line current tile equal to old line current tile, merge and point to next current tile in new line
       if new_line[k] == line[i] {
         new_line[k] += line[i];
         delta_score += new_line[k];
-        destinations[i] = k as i8 - j;
+        destinations[i] = k as i8 - i as i8;
         k += 1;
+
+      // if not equal
       } else {
-        if new_line[k] == 0 {
-          new_line[k] = line[i];
-        } else {
+
+        // assign old line's current tile to the first empty slot available in the new line, 
+        if new_line[k] != 0 {
           k += 1;
-          new_line[k] = line[i];
         }
-        destinations[i] = k as i8 - j;
+        new_line[k] = line[i];
+
+        destinations[i] = k as i8 - i as i8;
       }
+
     }
+
   }
 
-  StackingResult::new(*line, new_line, delta_score, destinations)
+  StackingResult::new(line, &new_line, delta_score, &destinations)
 }
 
-/*
-Moves precomputation part
-*/
+//////////////////////////////////////////////////
+// Move Precomputation
+//////////////////////////////////////////////////
 
 struct AdmissibleValues {
   value: u32,
@@ -184,7 +192,9 @@ pub fn make_precomputed_hashmap() -> HashMap<u32, StackingResult> {
 }
 
 
-// Unit Tests
+//////////////////////////////////////////////////
+// Unit tests
+//////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests {
@@ -208,6 +218,27 @@ mod tests {
     let res = super::process_line(&[2, 2, 2, 2]);
 
     assert_eq!(res.new_line, super::encoding::encode_line(&[4, 4, 0, 0]));
+  }
+  
+  #[test]
+  fn stacks_gap_correctly() {
+    let res = super::process_line(&[2, 0, 2, 0]);
+
+    assert_eq!(res.new_line, super::encoding::encode_line(&[4, 0, 0, 0]));
+  }
+  
+  #[test]
+  fn stacks_big_gap_correctly() {
+    let res = super::process_line(&[2, 0, 0, 2]);
+
+    assert_eq!(res.new_line, super::encoding::encode_line(&[4, 0, 0, 0]));
+  }
+  
+  #[test]
+  fn stacks_gap_and_equal_correctly() {
+    let res = super::process_line(&[2, 0, 2, 2]);
+
+    assert_eq!(res.new_line, super::encoding::encode_line(&[4, 2, 0, 0]));
   }
 
   // Test scoring

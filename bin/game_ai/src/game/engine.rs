@@ -7,18 +7,12 @@ use crate::encoding;
 use super::moves::StackingResult;
 use std::collections::HashMap;
 
-use super::{GRID_SIDE, DestinationGrid, EncodedGrid, DecodedGrid};
+use super::*;
 
 
-pub enum Move {
-  Up = 0,
-  Left = 1,
-  Right = 2,
-  Down = 3,
-}
-
-
+//////////////////////////////////////////////////
 // Grid
+//////////////////////////////////////////////////
 
 pub struct Grid {
   encoded_state: EncodedGrid,
@@ -109,8 +103,12 @@ impl Clone for Grid {
   }
 }
 
+impl GridLike for Grid {}
 
+
+//////////////////////////////////////////////////
 // MoveResult
+//////////////////////////////////////////////////
 
 pub struct MoveResult {
   prev_grid: EncodedGrid,
@@ -150,25 +148,31 @@ impl Clone for MoveResult {
 }
 
 
+//////////////////////////////////////////////////
 // Public API
+//////////////////////////////////////////////////
 
 pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32, StackingResult>) -> MoveResult {
   let prev_grid = grid;
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid: DestinationGrid = [[0; GRID_SIDE]; GRID_SIDE];
 
+  println!("\nInitial state:\n{:?}\n", grid.get_decoded_state());
+
   // normalize to only operate on left moves
   match player_move {
-    Move::Up => grid.transpose(),
-    Move::Left => &mut grid,
-    Move::Right => grid.reverse(),
-    Move::Down => grid.transpose().reverse(),
+    Move::Up => { grid.transpose(); () },
+    Move::Left => (),
+    Move::Right => { grid.reverse(); () },
+    Move::Down => { grid.transpose().reverse(); () },
   };
 
-  // find new state from move_table
-  for i in 0..grid.encoded_state.len() {
+  println!("\nAfter normalization:\n{:?}\n", grid.get_decoded_state());
 
-    // process each row if in table, else it means that it had no effect 
+  // find new state from move_table
+  for i in 0..GRID_SIDE {
+
+    // process each row if in table, else it means that it had no effect so the old value is kept 
     if moves_table.contains_key(&prev_grid.encoded_state[i]) {
       let result = moves_table.get(&prev_grid.encoded_state[i]).unwrap();
 
@@ -176,7 +180,10 @@ pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32
       tot_delta_score += result.get_delta_score();
       dest_grid[i] = result.get_destinations();
     }
+
   }
+
+  println!("\nAfter matching moves transition:\n{:?}\n", grid.get_decoded_state());
 
   // restore grid
   match player_move {
@@ -186,11 +193,15 @@ pub fn process_move(player_move: Move, mut grid: Grid, moves_table: &HashMap<u32
     Move::Down => grid.reverse().transpose(),
   };
 
+  println!("\nFinal state:\n{:?}\n", grid.get_decoded_state());
+
   MoveResult::new(prev_grid.get_encoded_state(), grid.get_encoded_state(), tot_delta_score, dest_grid)
 }
 
 
-// Unit Tests
+//////////////////////////////////////////////////
+// Unit tests
+//////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests {
@@ -300,6 +311,7 @@ mod tests {
   }
 
   #[test]
+  #[ignore]
   pub fn test_down_move() {
     let moves_table: HashMap<u32, StackingResult> = crate::game::moves::make_precomputed_hashmap();
 
