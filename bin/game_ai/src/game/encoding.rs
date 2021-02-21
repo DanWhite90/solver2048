@@ -3,9 +3,12 @@
 //! This module allows for encoding and decoding a row state into and from a u32 number.
 //! Given the code is internal to the library no validation of the inputs is executed for maximum performance.
 
+use super::*;
+
+
 const ENCODING_BITS: u32 = 5;
 
-/// Encodes a single row of tiles to a number
+/// Encodes a single row of tiles to a number.
 pub fn encode_line(row: &[u32]) -> u32 {
   let mut num = 0;
   let mut count = 0;
@@ -19,8 +22,8 @@ pub fn encode_line(row: &[u32]) -> u32 {
   num
 }
 
-/// Decodes a number to a single row of tiles
-pub fn decode_line(mut num: u32) -> [u32; 4] {
+/// Decodes a number to a single row of tiles.
+pub fn decode_line(mut num: u32) -> DecodedLine {
   let mut row = [0, 0, 0, 0];
   let mut tile;
 
@@ -32,6 +35,17 @@ pub fn decode_line(mut num: u32) -> [u32; 4] {
     }
   }
   row
+}
+
+
+pub fn encode_grid(decoded_grid: &DecodedGrid) -> EncodedGrid {
+  let mut grid: EncodedGrid = [0; GRID_SIDE];
+
+  for (i, decoded_line) in decoded_grid.iter().enumerate() {
+    grid[i] = encoding::encode_line(decoded_line);
+  }
+
+  grid
 }
 
 
@@ -66,6 +80,7 @@ mod tests {
     let row = [0, 2, 4, 8];
     assert_eq!(super::encode_line(&row), 100384);
   }
+
 
   // testing for decode_line()
   #[test]
