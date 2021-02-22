@@ -1,9 +1,10 @@
 //! # `game` module
-//! 
+//!
 //! This module should define the function that generates the precomputed moves as well as the engine.
 //! Contains all the base definitions and implementations for the game.
 
 #![allow(dead_code)]
+#![allow(type_alias_bounds)]
 
 mod encoding;
 pub mod moves;
@@ -14,15 +15,24 @@ mod engine;
 // Core Types and Definitions
 //------------------------------------------------
 
+// These are kept const and never meant to be changed to allow for variable size grids.
+// Changing it would possibly break the encoding and other parts of the code that were optimized for this const value
 const GRID_SIDE: usize = 4;
 const GRID_SIZE: usize = GRID_SIDE * GRID_SIDE;
 
-type DecodedLine = [u32; GRID_SIDE];
-type DecodedGrid = [DecodedLine; GRID_SIDE];
-type EncodedGrid = [u32; GRID_SIDE];
-type DestinationLine = [i8; GRID_SIDE];
-type DestinationGrid = [DestinationLine; GRID_SIDE];
-type VecGrid = [u32; GRID_SIZE];
+
+// DATA STRUCTURES
+
+type GameGridPrimitive = u32;
+type EncodedGameGridPrimitive = u32;
+type DestGridPrimitive = i8;
+
+type Row<T: EntryType> = [T; GRID_SIDE];
+type EncodedGrid = [EncodedGameGridPrimitive; GRID_SIDE];
+
+type Grid<T: EntryType> = [Row<T>; GRID_SIDE];
+
+type VecGrid<T: EntryType> = [T; GRID_SIZE];
 
 /// Player move `enum`.
 pub enum PlayerMove {
@@ -32,172 +42,79 @@ pub enum PlayerMove {
   Down = 3,
 }
 
-/// Contains the information regarding the processing of the move for a single row in the grid.
-pub struct LineStackingResult {
-  prev_line: u32,
-  new_line: u32,
-  delta_score: u32,
-  destinations: DestinationLine,
-}
-
 /// `GameGrid` type containing the encoded grid state, defining the grid behavior.
 pub struct GameGrid {
   encoded_state: EncodedGrid,
 }
 
-/// Contains the information regarding the processing of the move for the entire grid.
+/// Contains the information regarding the encoded processing of the move for a single row in the grid.
+pub struct LineStackingResult {
+  prev_line: EncodedGameGridPrimitive,
+  new_line: EncodedGameGridPrimitive,
+  delta_score: u32,
+  destinations: Row<DestGridPrimitive>,
+}
+
+/// Contains the information regarding the encoded processing of the move for the entire grid.
 pub struct MoveResult {
   prev_grid: EncodedGrid,
   new_grid: EncodedGrid,
   delta_score: u32,
-  destination_grid: DestinationGrid,
+  destination_grid: Grid<DestGridPrimitive>,
 }
 
-/// Label trait for grid-like structs.
+
+// TRAITS
+
+/// Marker trait to define the set of types that a grid tile can assume
+trait EntryType {}
+
+/// Marker trait to define an object that is capable of exhibiting a grid-like behavior
 trait GridLike {}
 
-/// 
-trait Transpose: GridLike {}
-trait Reverse {}
+/// Implements the transposition for method for `GridLike` structures
+trait Transpose<T: EntryType>: GridLike {
+
+  /// Returns a `Copy` value of the transposed `GridLike` object
+  fn transpose(&mut self) -> &mut Self;
+}
+
+/// Implements the horizontal reverse of a `GridLike` structure
+trait Reverse: GridLike {
+
+  /// Reverses the `GridLike` object in place horizontally and returns the mutable reference to itself for chaining
+  fn reverse<T: EntryType>(&self) -> Grid<T>;
+}
 
 
 //------------------------------------------------
 // Implementations
 //------------------------------------------------
 
-impl GridLike for DestinationGrid {}
-impl GridLike for DecodedGrid {}
 
-impl LineStackingResult {
+// Primitives
 
-  fn new(prev_line: &DecodedLine, new_line: &DecodedLine, delta_score: u32, destinations: &DestinationLine) -> LineStackingResult {
-    LineStackingResult {
-      prev_line: encoding::encode_line(prev_line),
-      new_line: encoding::encode_line(new_line),
-      delta_score,
-      destinations: *destinations,
-    }
-  }
+impl EntryType for GameGridPrimitive {}
+impl EntryType for DestGridPrimitive {}
 
-  // Getters
-  pub fn get_prev_line(&self) -> u32 { self.prev_line }
-  pub fn get_new_line(&self) -> u32 { self.new_line }
-  pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destinations<'a>(&'a self) -> DestinationLine { self.destinations }
+// Grid
 
-  #[allow(dead_code)]
-  /// Formats stacking result into a valid JavaScript array declaration, to insert into `Map()` API.
-  pub fn format_js_array(&self) -> String {
-    format!("[{}, [{}, {}, {:?}]],\n", self.prev_line, self.new_line, self.delta_score, self.destinations)
-  }
-}
+impl<T: EntryType> GridLike for Grid<T> {}
 
-impl Copy for LineStackingResult {}
-
-impl Clone for LineStackingResult {
-  fn clone(&self) -> Self {
-    *self
-  }
-}
-
-impl GameGrid {
-
-  pub fn new(tiles: &DecodedGrid) -> GameGrid {
-    // validation ignored for performance
-
-    let state: EncodedGrid = encoding::encode_grid(tiles);
-
-    GameGrid {encoded_state: state}
-  }
-
-  // Getters
-  pub fn get_encoded_state(&self) -> EncodedGrid {
-    self.encoded_state
-  }
-
-  pub fn get_decoded_state(&self) -> DecodedGrid {
-    let mut decoded_grid: DecodedGrid = [[0; GRID_SIDE]; GRID_SIDE];
-
-    for (i, &encoded_line) in self.encoded_state.iter().enumerate() {
-      decoded_grid[i] = encoding::decode_line(encoded_line);
-    }
-
-    decoded_grid
-  }
-
-  // Other features
-
-  pub fn transpose(&mut self) -> &mut Self {
-
-    let mut decoded_grid: DecodedGrid = self.get_decoded_state();
-
-    let mut tmp: u32;
-    for i in 0..GRID_SIDE {
-      for j in (i + 1)..GRID_SIDE {
-        tmp = decoded_grid[i][j];
-        decoded_grid[i][j] = decoded_grid[j][i];
-        decoded_grid[j][i] = tmp;
-      }
-    }
-    
-    self.encoded_state = encoding::encode_grid(&decoded_grid);
-
-    self
-  }
-
-  pub fn reverse(&mut self) -> &mut Self {
-
-    let mut decoded_grid: DecodedGrid = self.get_decoded_state();
-
-    let mut tmp: u32;
-    for i in 0..GRID_SIDE {
-      for j in 0..(GRID_SIDE / 2) {
-        tmp = decoded_grid[i][j];
-        decoded_grid[i][j] = decoded_grid[i][GRID_SIDE - 1 - j];
-        decoded_grid[i][GRID_SIDE - 1 - j] = tmp;
-      }
-    }
-    
-    self.encoded_state = encoding::encode_grid(&decoded_grid);
-
-    self
-  }
-
-}
-
-impl Copy for GameGrid {}
+// GameGrid
 
 impl Clone for GameGrid {
   fn clone(&self) -> Self {
     *self
   }
 }
+impl Copy for GameGrid {}
 
-impl GridLike for GameGrid {}
+#[cfg(test)]
+mod tests {
 
-impl MoveResult {
-
-  pub fn new(prev: EncodedGrid, new: EncodedGrid, delta: u32, dest: DestinationGrid) -> Self {
-    MoveResult {
-      prev_grid: prev,
-      new_grid: new,
-      delta_score: delta,
-      destination_grid: dest,
-    }
-  }
-
-  // Getters
-  pub fn get_prev_grid(&self) -> EncodedGrid { self.prev_grid }
-  pub fn get_new_grid(&self) -> EncodedGrid { self.new_grid }
-  pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destination_grid(&self) -> DestinationGrid { self.destination_grid }
 
 }
 
-impl Copy for MoveResult {}
 
-impl Clone for MoveResult {
-  fn clone(&self) -> Self {
-    *self
-  }
-}
+// Blanket
