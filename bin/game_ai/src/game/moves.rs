@@ -138,8 +138,6 @@ pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &H
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid: Grid<DestGridPrimitive> = [[0; GRID_SIDE]; GRID_SIDE];
 
-  println!("\nInitial state:\n{:?}\n", grid.get_decoded_state());
-
   // normalize to only operate on left moves
   match player_move {
     PlayerMove::Up => { grid.transpose(); () },
@@ -148,23 +146,19 @@ pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &H
     PlayerMove::Down => { grid.transpose().reverse(); () },
   };
 
-  println!("\nAfter normalization:\n{:?}\n", grid.get_decoded_state());
-
   // find new state from move_table
   for i in 0..GRID_SIDE {
 
     // process each row if in table, else it means that it had no effect so the old value is kept 
-    if moves_table.contains_key(&prev_grid.encoded_state[i]) {
-      let result = moves_table.get(&prev_grid.encoded_state[i]).unwrap();
+    if moves_table.contains_key(&prev_grid.get_encoded_state()[i]) {
+      let result = moves_table.get(&prev_grid.get_encoded_state()[i]).unwrap();
 
-      grid.encoded_state[i] = result.get_new_line();
+      grid.get_encoded_state()[i] = result.get_new_line();
       tot_delta_score += result.get_delta_score();
       dest_grid[i] = result.get_destinations();
     }
 
   }
-
-  println!("\nAfter matching moves transition:\n{:?}\n", grid.get_decoded_state());
 
   // restore grid
   match player_move {
@@ -174,146 +168,8 @@ pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &H
     PlayerMove::Down => grid.reverse().transpose(),
   };
 
-  println!("\nFinal state:\n{:?}\n", grid.get_decoded_state());
-
   MoveResult::new(prev_grid.get_encoded_state(), grid.get_encoded_state(), tot_delta_score, dest_grid)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl GridLike for GameGrid {}
-
-impl LineStackingResult {
-
-  fn new(prev_line: &Row<GameGridPrimitive>, new_line: &Row<GameGridPrimitive>, delta_score: u32, destinations: &Row<DestGridPrimitive>) -> LineStackingResult {
-    LineStackingResult {
-      prev_line: encoding::encode_line(prev_line),
-      new_line: encoding::encode_line(new_line),
-      delta_score,
-      destinations: *destinations,
-    }
-  }
-
-  // Getters
-  pub fn get_prev_line(&self) -> u32 { self.prev_line }
-  pub fn get_new_line(&self) -> u32 { self.new_line }
-  pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destinations<'a>(&'a self) -> Row<DestGridPrimitive> { self.destinations }
-
-  #[allow(dead_code)]
-  /// Formats stacking result into a valid JavaScript array declaration, to insert into `Map()` API.
-  pub fn format_js_array(&self) -> String {
-    format!("[{}, [{}, {}, {:?}]],\n", self.prev_line, self.new_line, self.delta_score, self.destinations)
-  }
-}
-
-impl GameGrid {
-
-  pub fn new(tiles: &Grid<GameGridPrimitive>) -> GameGrid {
-    // validation ignored for performance
-
-    let state: EncodedGrid = encoding::encode_grid(tiles);
-
-    GameGrid {encoded_state: state}
-  }
-
-  // Getters
-  pub fn get_encoded_state(&self) -> EncodedGrid {
-    self.encoded_state
-  }
-
-  pub fn get_decoded_state(&self) -> Grid<GameGridPrimitive> {
-    let mut decoded_grid: Grid<GameGridPrimitive> = [[0; GRID_SIDE]; GRID_SIDE];
-
-    for (i, &encoded_line) in self.encoded_state.iter().enumerate() {
-      decoded_grid[i] = encoding::decode_line(encoded_line);
-    }
-
-    decoded_grid
-  }
-
-  // Other features
-
-  pub fn transpose(&mut self) -> &mut Self {
-
-    let mut decoded_grid: Grid<GameGridPrimitive> = self.get_decoded_state();
-
-    let mut tmp: u32;
-    for i in 0..GRID_SIDE {
-      for j in (i + 1)..GRID_SIDE {
-        tmp = decoded_grid[i][j];
-        decoded_grid[i][j] = decoded_grid[j][i];
-        decoded_grid[j][i] = tmp;
-      }
-    }
-    
-    self.encoded_state = encoding::encode_grid(&decoded_grid);
-
-    self
-  }
-
-  pub fn reverse(&mut self) -> &mut Self {
-
-    let mut decoded_grid: Grid<GameGridPrimitive> = self.get_decoded_state();
-
-    let mut tmp: u32;
-    for i in 0..GRID_SIDE {
-      for j in 0..(GRID_SIDE / 2) {
-        tmp = decoded_grid[i][j];
-        decoded_grid[i][j] = decoded_grid[i][GRID_SIDE - 1 - j];
-        decoded_grid[i][GRID_SIDE - 1 - j] = tmp;
-      }
-    }
-    
-    self.encoded_state = encoding::encode_grid(&decoded_grid);
-
-    self
-  }
-
-}
-
-
-impl MoveResult {
-
-  pub fn new(prev: EncodedGrid, new: EncodedGrid, delta: u32, dest: Grid<DestGridPrimitive>) -> Self {
-    MoveResult {
-      prev_grid: prev,
-      new_grid: new,
-      delta_score: delta,
-      destination_grid: dest,
-    }
-  }
-
-  // Getters
-  pub fn get_prev_grid(&self) -> EncodedGrid { self.prev_grid }
-  pub fn get_new_grid(&self) -> EncodedGrid { self.new_grid }
-  pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destination_grid(&self) -> Grid<DestGridPrimitive> { self.destination_grid }
-
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 //------------------------------------------------
@@ -411,47 +267,6 @@ mod tests {
     let res = super::process_line(&[4, 0, 2, 2]);
 
     assert_eq!(res.destinations, [0, 0, -1, -2]);
-  }
-
-
-  // Test full grid
-
-  #[test]
-  pub fn test_grid_transpose() {
-    let mut grid: GameGrid = GameGrid::new(&[
-      [0, 2, 4, 8],
-      [4, 4, 4, 4],
-      [8, 8, 4, 4],
-      [8, 4, 2, 2],
-    ]);
-
-    let res: GameGrid = GameGrid::new(&[
-      [0, 4, 8, 8],
-      [2, 4, 8, 4],
-      [4, 4, 4, 2],
-      [8, 4, 4, 2],
-    ]);
-
-    assert_eq!(grid.transpose().encoded_state, res.encoded_state);
-  }
-
-  #[test]
-  pub fn test_grid_reverse() {
-    let mut grid: GameGrid = GameGrid::new(&[
-      [0, 2, 4, 8],
-      [4, 4, 4, 4],
-      [8, 8, 4, 4],
-      [8, 4, 2, 2],
-    ]);
-
-    let res: GameGrid = GameGrid::new(&[
-      [8, 4, 2, 0],
-      [4, 4, 4, 4],
-      [4, 4, 8, 8],
-      [2, 2, 4, 8],
-    ]);
-
-    assert_eq!(grid.reverse().encoded_state, res.encoded_state);
   }
 
 

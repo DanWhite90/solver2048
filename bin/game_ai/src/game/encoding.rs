@@ -69,7 +69,9 @@ mod tests {
 
   use super::*;
 
+
   // testing for encode_line()
+
   #[test]
   fn correct_zero_encoding() {
     let row = [0, 0, 0, 0];
@@ -96,6 +98,7 @@ mod tests {
 
 
   // testing for decode_line()
+
   #[test]
   fn correct_zero_decoding() {
     assert_eq!(decode_line(0), [0, 0, 0, 0]);
@@ -117,7 +120,8 @@ mod tests {
   }
 
 
-  // testing for encode_grid
+  // testing for encode_grid()
+
   #[test]
   pub fn test_encode_grid() {
     let encoded_state: EncodedGrid = encoding::encode_grid(&[
@@ -129,6 +133,9 @@ mod tests {
 
     assert_eq!(encoded_state, [100384, 67650, 67683, 33859]);
   }
+
+
+  // testing for decode_grid()
 
   #[test]
   pub fn test_decode_grid() {
