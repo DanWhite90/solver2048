@@ -183,71 +183,76 @@ mod tests {
 
 
   // Test stacking
+
   #[test]
   fn stacks_empty_correctly() {
-    let res = super::process_line(&[0, 0, 0, 0]);
+    let res = process_line(&[0, 0, 0, 0]);
 
     assert_eq!(res.new_line, encoding::encode_line(&[0, 0, 0, 0]));
   }
   
   #[test]
   fn stacks_some_correctly() {
-    let res = super::process_line(&[4, 4, 2, 2]);
+    let res = process_line(&[4, 4, 2, 2]);
 
     assert_eq!(res.new_line, encoding::encode_line(&[8, 4, 0, 0]));
   }
   
   #[test]
   fn stacks_corner_correctly() {
-    let res = super::process_line(&[2, 2, 2, 2]);
+    let res = process_line(&[2, 2, 2, 2]);
 
     assert_eq!(res.new_line, encoding::encode_line(&[4, 4, 0, 0]));
   }
   
   #[test]
   fn stacks_gap_correctly() {
-    let res = super::process_line(&[2, 0, 2, 0]);
+    let res = process_line(&[2, 0, 2, 0]);
 
     assert_eq!(res.new_line, encoding::encode_line(&[4, 0, 0, 0]));
   }
   
   #[test]
   fn stacks_big_gap_correctly() {
-    let res = super::process_line(&[2, 0, 0, 2]);
+    let res = process_line(&[2, 0, 0, 2]);
 
     assert_eq!(res.new_line, encoding::encode_line(&[4, 0, 0, 0]));
   }
   
   #[test]
   fn stacks_gap_and_equal_correctly() {
-    let res = super::process_line(&[2, 0, 2, 2]);
+    let res = process_line(&[2, 0, 2, 2]);
 
     assert_eq!(res.new_line, encoding::encode_line(&[4, 2, 0, 0]));
   }
 
+
   // Test scoring
+
   #[test]
   fn computes_null_score_correctly() {
-    let res = super::process_line(&[8, 4, 2, 0]);
+    let res = process_line(&[8, 4, 2, 0]);
 
     assert_eq!(res.delta_score, 0);
   }
 
   #[test]
   fn computes_corner_score_correctly() {
-    let res = super::process_line(&[4, 4, 4, 4]);
+    let res = process_line(&[4, 4, 4, 4]);
 
     assert_eq!(res.delta_score, 16);
   }
 
   #[test]
   fn computes_large_score_correctly() {
-    let res = super::process_line(&[32768, 32768, 2, 2]);
+    let res = process_line(&[32768, 32768, 2, 2]);
 
     assert_eq!(res.delta_score, 65540);
   }
 
+
   // Test moving
+
   #[test]
   fn computes_null_movement_correctly() {
     let res = super::process_line(&[8, 4, 2, 0]);
