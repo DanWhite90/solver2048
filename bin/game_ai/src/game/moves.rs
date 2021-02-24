@@ -110,7 +110,7 @@ fn traverse_row(row: &Row<GameGridPrimitive>, position: usize, moves_table: &mut
       traverse_row(&new_row, position + 1, moves_table);
     }
 
-  // when all the tiles in a single row are defined (base case), process the row and store the result
+  // when all the tiles in a single row are chosen (base case), process the row and store the result
   } else {
     let res = process_line(row);
 
@@ -132,7 +132,7 @@ pub fn make_precomputed_hashmap() -> HashMap<u32, LineStackingResult> {
   moves_table
 }
 
-/// Process the entire `Grid` 
+/// Process the entire `GameGrid` stacking after a move is made 
 pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &HashMap<u32, LineStackingResult>) -> MoveResult {
   let prev_grid = grid;
   let mut tot_delta_score: u32 = 0;
@@ -140,20 +140,21 @@ pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &H
 
   // normalize to only operate on left moves
   match player_move {
-    PlayerMove::Up => { grid.transpose(); () },
+    PlayerMove::Up => { grid.transpose(); },
     PlayerMove::Left => (),
-    PlayerMove::Right => { grid.reverse(); () },
-    PlayerMove::Down => { grid.transpose().reverse(); () },
+    PlayerMove::Right => { grid.reverse(); },
+    PlayerMove::Down => { grid.transpose().reverse(); },
   };
 
   // find new state from move_table
   for i in 0..GRID_SIDE {
 
     // process each row if in table, else it means that it had no effect so the old value is kept 
-    if moves_table.contains_key(&prev_grid.get_encoded_state()[i]) {
-      let result = moves_table.get(&prev_grid.get_encoded_state()[i]).unwrap();
+    let key = grid.get_encoded()[i];
+    if moves_table.contains_key(&key) {
+      let result = moves_table.get(&key).unwrap();
 
-      grid.get_encoded_state()[i] = result.get_new_line();
+      grid[i] = encoding::decode_line(result.get_new_line());
       tot_delta_score += result.get_delta_score();
       dest_grid[i] = result.get_destinations();
     }
@@ -162,13 +163,22 @@ pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &H
 
   // restore grid
   match player_move {
-    PlayerMove::Up => grid.transpose(),
-    PlayerMove::Left => &mut grid,
-    PlayerMove::Right => grid.reverse(),
-    PlayerMove::Down => grid.reverse().transpose(),
+    PlayerMove::Up => {
+      grid.transpose();
+      dest_grid.transpose();
+    },
+    PlayerMove::Left => (),
+    PlayerMove::Right => {
+      grid.reverse();
+      dest_grid.reverse().change_sign();
+    },
+    PlayerMove::Down => {
+      grid.reverse().transpose();
+      dest_grid.reverse().transpose().change_sign();
+    },
   };
 
-  MoveResult::new(prev_grid.get_encoded_state(), grid.get_encoded_state(), tot_delta_score, dest_grid)
+  MoveResult::new(prev_grid.get_encoded(), grid.get_encoded(), tot_delta_score, dest_grid)
 }
 
 
@@ -182,7 +192,7 @@ mod tests {
   use super::*;
 
 
-  // Test stacking
+  // Test single row stacking
 
   #[test]
   fn stacks_empty_correctly() {
@@ -227,7 +237,7 @@ mod tests {
   }
 
 
-  // Test scoring
+  // Test single row scoring
 
   #[test]
   fn computes_null_score_correctly() {
@@ -251,7 +261,7 @@ mod tests {
   }
 
 
-  // Test moving
+  // Test single row moving destinations
 
   #[test]
   fn computes_null_movement_correctly() {
@@ -275,7 +285,7 @@ mod tests {
   }
 
 
-  // process_move()
+  // Test full move results
 
   #[test]
   pub fn test_up_move() {
@@ -299,18 +309,81 @@ mod tests {
       [0, 0, 0, 0],
       [-1, -1, -1, -1],
       [0, 0, -1, 0],
-      [-2, 0, -2, -1],
+      [-2, 0, -2, -3],
     ];
 
     let result: MoveResult = process_move(PlayerMove::Up, grid, &moves_table);
 
-    assert_eq!(result.get_new_grid(), new_grid.get_encoded_state());
+    assert_eq!(result.get_new_grid(), new_grid.get_encoded(), "\n{}{}\n", GameGrid::new(&encoding::decode_grid(&result.get_new_grid())), new_grid);
     assert_eq!(result.get_delta_score(), 20);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }
 
   #[test]
-  #[ignore]
+  pub fn test_left_move() {
+    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+
+    let grid: GameGrid = GameGrid::new(&[
+      [0, 2, 2, 0],
+      [2, 2, 2, 2],
+      [0, 0, 4, 0],
+      [8, 0, 4, 2],
+    ]);
+
+    let new_grid: GameGrid = GameGrid::new(&[
+      [4, 0, 0, 0],
+      [4, 4, 0, 0],
+      [4, 0, 0, 0],
+      [8, 4, 2, 0],
+    ]);
+
+    let dest_grid: Grid<DestGridPrimitive> = [
+      [0, -1, -2, 0],
+      [0, -1, -1, -2],
+      [0, 0, -2, 0],
+      [0, 0, -1, -1],
+    ];
+
+    let result: MoveResult = process_move(PlayerMove::Left, grid, &moves_table);
+
+    assert_eq!(result.get_new_grid(), new_grid.get_encoded(), "\n{}{}\n", GameGrid::new(&encoding::decode_grid(&result.get_new_grid())), new_grid);
+    assert_eq!(result.get_delta_score(), 12);
+    assert_eq!(result.get_destination_grid(), dest_grid);
+  }
+
+  #[test]
+  pub fn test_right_move() {
+    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+
+    let grid: GameGrid = GameGrid::new(&[
+      [0, 2, 2, 0],
+      [2, 2, 2, 2],
+      [0, 0, 4, 0],
+      [8, 0, 4, 2],
+    ]);
+
+    let new_grid: GameGrid = GameGrid::new(&[
+      [0, 0, 0, 4],
+      [0, 0, 4, 4],
+      [0, 0, 0, 4],
+      [0, 8, 4, 2],
+    ]);
+
+    let dest_grid: Grid<DestGridPrimitive> = [
+      [0, 2, 1, 0],
+      [2, 1, 1, 0],
+      [0, 0, 1, 0],
+      [1, 0, 0, 0],
+    ];
+
+    let result: MoveResult = process_move(PlayerMove::Right, grid, &moves_table);
+
+    assert_eq!(result.get_new_grid(), new_grid.get_encoded(), "\n{}{}\n", GameGrid::new(&encoding::decode_grid(&result.get_new_grid())), new_grid);
+    assert_eq!(result.get_delta_score(), 12);
+    assert_eq!(result.get_destination_grid(), dest_grid);
+  }
+
+  #[test]
   pub fn test_down_move() {
     let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
@@ -337,7 +410,7 @@ mod tests {
 
     let result: MoveResult = process_move(PlayerMove::Down, grid, &moves_table);
 
-    assert_eq!(result.get_new_grid(), new_grid.get_encoded_state());
+    assert_eq!(result.get_new_grid(), new_grid.get_encoded());
     assert_eq!(result.get_delta_score(), 20);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }

@@ -11,6 +11,7 @@ pub mod moves;
 mod engine;
 
 use std::ops::{ Index, IndexMut };
+use std::{ fmt, fmt::Display };
 
 
 //------------------------------------------------
@@ -23,18 +24,21 @@ const GRID_SIDE: usize = 4;
 const GRID_SIZE: usize = GRID_SIDE * GRID_SIDE;
 
 
-// DATA STRUCTURES
+// TYPES
 
 type GameGridPrimitive = u32;
 type EncodedGameGridPrimitive = u32;
 type DestGridPrimitive = i8;
 
-type Row<T: Copy + Sized> = [T; GRID_SIDE];
+type Row<T: Copy> = [T; GRID_SIDE];
 type EncodedGrid = [EncodedGameGridPrimitive; GRID_SIDE];
 
-type Grid<T: Copy + Sized> = [Row<T>; GRID_SIDE];
+type Grid<T: Copy> = [Row<T>; GRID_SIDE];
 
-type VecGrid<T: Copy + Sized> = [T; GRID_SIZE];
+type VecGrid<T: Copy> = [T; GRID_SIZE];
+
+
+// DATA STRUCTURES
 
 /// Player move `enum`.
 pub enum PlayerMove {
@@ -50,6 +54,7 @@ pub struct GameGrid {
 }
 
 /// Contains the information regarding the encoded processing of the move for a single row in the grid.
+/// All the values are encoded where possible.
 pub struct LineStackingResult {
   prev_line: EncodedGameGridPrimitive,
   new_line: EncodedGameGridPrimitive,
@@ -58,6 +63,7 @@ pub struct LineStackingResult {
 }
 
 /// Contains the information regarding the encoded processing of the move for the entire grid.
+/// All the values are encoded where possible.
 pub struct MoveResult {
   prev_grid: EncodedGrid,
   new_grid: EncodedGrid,
@@ -68,14 +74,29 @@ pub struct MoveResult {
 
 // TRAITS
 
+/// A trait for an object that can return and encoded version if itself
+trait Encode {
+  type Output;
+
+  fn get_encoded(&self) -> Self::Output;
+}
+
+/// A trait for an object that can return a decoded version of itself
+trait Decode {
+  type Output;
+
+  fn get_decoded(&self) -> Self::Output;
+}
+
 /// A market trait for structures capable of exhibiting grid-like behavior
-trait GridLike: IndexMut<usize> + Sized {
+trait GridLike: IndexMut<usize> {
+  type EntryType: Copy;
   
   /// Gets an immutable reference to the underlying state of the grid
-  fn get_state(&self) -> &Grid<GameGridPrimitive>;
+  fn get_state(&self) -> &Grid<Self::EntryType>;
 
   /// Gets a mutable reference to the underlying state of the grid
-  fn get_state_mut(&mut self) -> &mut Grid<GameGridPrimitive>;
+  fn get_state_mut(&mut self) -> &mut Grid<Self::EntryType>;
 
 }
 
@@ -87,9 +108,11 @@ trait Transpose: GridLike {
 
     let grid = self.get_state_mut();
 
+    let (n, m) = (grid.len(), grid[0].len());
+
     let mut tmp;
-    for i in 0..GRID_SIDE {
-      for j in (i + 1)..GRID_SIDE {
+    for i in 0..n {
+      for j in (i + 1)..m {
         tmp = grid[i][j];
         grid[i][j] = grid[j][i];
         grid[j][i] = tmp;
@@ -98,6 +121,7 @@ trait Transpose: GridLike {
 
     self
   }
+
 }
 
 /// Implements the horizontal reverse of a `GridLike` structure
@@ -107,18 +131,29 @@ trait Reverse: GridLike {
   fn reverse(&mut self) -> &mut Self {
 
     let grid = self.get_state_mut();
+    
+    let (n, m) = (grid.len(), grid[0].len());
 
     let mut tmp;
-    for i in 0..GRID_SIDE {
-      for j in 0..(GRID_SIDE / 2) {
+    for i in 0..n {
+      for j in 0..(m / 2) {
         tmp = grid[i][j];
-        grid[i][j] = grid[i][GRID_SIDE - 1 - j];
-        grid[i][GRID_SIDE - 1 - j] = tmp;
+        grid[i][j] = grid[i][m - 1 - j];
+        grid[i][m - 1 - j] = tmp;
       }
     }
 
     self
   }
+
+}
+
+/// Implements the ability to change the sign of an object
+trait ChangeSign {
+
+  /// Reverses the sign of each entry in `Grid`
+  fn change_sign(&mut self) -> &mut Self;
+
 }
 
 
@@ -135,10 +170,20 @@ impl GameGrid {
     GameGrid { state: *state }
   }
 
-  fn get_encoded_state(&self) -> EncodedGrid {
-    encoding::encode_grid(&self.state)
-  }
+}
 
+impl Display for GameGrid{
+
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+    write!(f, "GameGrid::state = [\n")?;
+    for i in 0..GRID_SIDE {
+      write!(f, "  {:?}\n", self.state[i])?;
+    }
+    write!(f, "]\n")?;
+
+    Ok(())
+  }
 }
 
 impl Clone for GameGrid {
@@ -169,19 +214,103 @@ impl IndexMut<usize> for GameGrid {
 }
 
 impl GridLike for GameGrid {
+  type EntryType = GameGridPrimitive;
 
-  fn get_state(&self) -> &Grid<GameGridPrimitive> {
+  fn get_state(&self) -> &Grid<Self::EntryType> {
     &self.state
   }
 
-  fn get_state_mut(&mut self) -> &mut Grid<GameGridPrimitive> {
+  fn get_state_mut(&mut self) -> &mut Grid<Self::EntryType> {
     &mut self.state
   }
   
 }
 
+impl Encode for GameGrid {
+  type Output = EncodedGrid;
+
+  fn get_encoded(&self) -> Self::Output {
+    encoding::encode_grid(&self.state)
+  }
+}
+
 impl Transpose for GameGrid {}
 impl Reverse for GameGrid {}
+
+
+// Row<GameGridPrimitive>
+
+impl Encode for Row<GameGridPrimitive> {
+  type Output = EncodedGameGridPrimitive;
+
+  fn get_encoded(&self) -> Self::Output {
+    encoding::encode_line(self)
+  }
+}
+
+
+// EncodedGameGridPrimitive
+
+impl Decode for EncodedGameGridPrimitive {
+  type Output = Row<GameGridPrimitive>;
+
+  fn get_decoded(&self) -> Self::Output {
+    encoding::decode_line(*self)
+  }
+}
+
+
+// Grid
+
+impl<T: Copy> GridLike for Grid<T> {
+  type EntryType = T;
+
+  fn get_state(&self) -> &Grid<Self::EntryType> {
+    self
+  }
+
+  fn get_state_mut(&mut self) -> &mut Grid<Self::EntryType> {
+    self
+  }
+
+}
+
+impl<T: Copy> Transpose for Grid<T> {}
+impl<T: Copy> Reverse for Grid<T> {}
+
+impl Encode for Grid<GameGridPrimitive> {
+  type Output = EncodedGrid;
+
+  fn get_encoded(&self) -> Self::Output {
+    encoding::encode_grid(self)
+  }
+}
+
+impl ChangeSign for Grid<DestGridPrimitive> {
+
+  fn change_sign(&mut self) -> &mut Self {
+
+    for i in 0..GRID_SIDE {
+      for j in 0..GRID_SIDE {
+        self[i][j] *= -1;
+      }
+    }
+
+    self
+  }
+
+}
+
+
+// EncodedGrid
+
+impl Decode for EncodedGrid {
+  type Output = Grid<GameGridPrimitive>;
+
+  fn get_decoded(&self) -> Self::Output {
+    encoding::decode_grid(self)
+  }
+}
 
 
 // LineStackingResult
@@ -202,7 +331,7 @@ impl LineStackingResult {
   pub fn get_prev_line(&self) -> u32 { self.prev_line }
   pub fn get_new_line(&self) -> u32 { self.new_line }
   pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destinations<'a>(&'a self) -> Row<DestGridPrimitive> { self.destinations }
+  pub fn get_destinations(& self) -> Row<DestGridPrimitive> { self.destinations }
 
   #[allow(dead_code)]
   /// Formats stacking result into a valid JavaScript array declaration, to insert into `Map()` API.
@@ -232,8 +361,6 @@ impl MoveResult {
   pub fn get_destination_grid(&self) -> Grid<DestGridPrimitive> { self.destination_grid }
 
 }
-
-
 
 
 //------------------------------------------------
