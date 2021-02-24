@@ -16,7 +16,7 @@ fn main() {
   println!("This is the move generator");
 
   let mut file: File = File::create(PATH).expect("Error in creating file!");
-  let moves_table: HashMap<u32, game::LineStackingResult> = game::moves::make_precomputed_hashmap();
+  let moves_table: HashMap<game::EncodedGameGridPrimitive, game::LineStackingResult> = game::moves::make_precomputed_hashmap();
 
   // Header 
   file.write("

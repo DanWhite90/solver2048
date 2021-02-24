@@ -37,7 +37,7 @@ pub fn decode_line(mut num: u32) -> Row<GameGridPrimitive> {
   row
 }
 
-// Encodes the entire grid
+/// Encodes the entire grid
 pub fn encode_grid(decoded_grid: &Grid<GameGridPrimitive>) -> EncodedGrid {
   let mut grid: EncodedGrid = [0; GRID_SIDE];
 
@@ -48,7 +48,7 @@ pub fn encode_grid(decoded_grid: &Grid<GameGridPrimitive>) -> EncodedGrid {
   grid
 }
 
-// Decodes the entire grid
+/// Decodes the entire grid
 pub fn decode_grid(encoded_grid: &EncodedGrid) -> Grid<GameGridPrimitive> {
   let mut decoded_grid: Grid<GameGridPrimitive> = [[0; GRID_SIDE]; GRID_SIDE];
 

@@ -25,6 +25,8 @@ struct AdmissibleTileValue {
 // Implementations
 //------------------------------------------------
 
+// AdmissibleTileValue
+
 impl AdmissibleTileValue {
 
   fn new(value: u32) -> AdmissibleTileValue {
@@ -99,7 +101,7 @@ fn process_line(line: &Row<GameGridPrimitive>) -> LineStackingResult {
 
 /// Function that recursively generates only and all the admissible row states to be encoded and saved in a `HashMap`.
 /// The definition allows to avoid nesting n loops for n the length of a row, and is applicable to any row length.
-fn traverse_row(row: &Row<GameGridPrimitive>, position: usize, moves_table: &mut HashMap<u32, LineStackingResult>) {
+fn traverse_row(row: &Row<GameGridPrimitive>, position: usize, moves_table: &mut HashMap<EncodedGameGridPrimitive, LineStackingResult>) {
 
   if position < row.len() {
 
@@ -123,8 +125,8 @@ fn traverse_row(row: &Row<GameGridPrimitive>, position: usize, moves_table: &mut
 }
 
 /// Generates the `HashMap` of precomputed single-row moves required to speed up the processing of full-grid moves.
-pub fn make_precomputed_hashmap() -> HashMap<u32, LineStackingResult> {
-  let mut moves_table: HashMap<u32, LineStackingResult> = HashMap::new();
+pub fn make_precomputed_hashmap() -> HashMap<EncodedGameGridPrimitive, LineStackingResult> {
+  let mut moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = HashMap::new();
 
   //Generate moves
   traverse_row(&[0, 0, 0, 0], 0, &mut moves_table);
@@ -133,7 +135,7 @@ pub fn make_precomputed_hashmap() -> HashMap<u32, LineStackingResult> {
 }
 
 /// Process the entire `GameGrid` stacking after a move is made 
-pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &HashMap<u32, LineStackingResult>) -> MoveResult {
+pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &HashMap<EncodedGameGridPrimitive, LineStackingResult>) -> MoveResult {
   let prev_grid = grid;
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid: Grid<DestGridPrimitive> = [[0; GRID_SIDE]; GRID_SIDE];
@@ -289,7 +291,7 @@ mod tests {
 
   #[test]
   pub fn test_up_move() {
-    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
     let grid: GameGrid = GameGrid::new(&[
       [0, 2, 2, 0],
@@ -321,7 +323,7 @@ mod tests {
 
   #[test]
   pub fn test_left_move() {
-    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
     let grid: GameGrid = GameGrid::new(&[
       [0, 2, 2, 0],
@@ -353,7 +355,7 @@ mod tests {
 
   #[test]
   pub fn test_right_move() {
-    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
     let grid: GameGrid = GameGrid::new(&[
       [0, 2, 2, 0],
@@ -385,7 +387,7 @@ mod tests {
 
   #[test]
   pub fn test_down_move() {
-    let moves_table: HashMap<u32, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
 
     let grid: GameGrid = GameGrid::new(&[
       [0, 2, 2, 0],

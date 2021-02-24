@@ -10,8 +10,9 @@ mod encoding;
 pub mod moves;
 mod engine;
 
-use std::ops::{ Index, IndexMut };
-use std::{ fmt, fmt::Display };
+use std::ops::{Index, IndexMut};
+use std::{fmt, fmt::Display};
+use num_traits::{Num, Zero};
 
 
 //------------------------------------------------
@@ -27,25 +28,25 @@ const GRID_SIZE: usize = GRID_SIDE * GRID_SIDE;
 // TYPES
 
 type GameGridPrimitive = u32;
-type EncodedGameGridPrimitive = u32;
+pub type EncodedGameGridPrimitive = u32;
 type DestGridPrimitive = i8;
 
-type Row<T: Copy> = [T; GRID_SIDE];
+type Row<T: Num> = [T; GRID_SIDE];
 type EncodedGrid = [EncodedGameGridPrimitive; GRID_SIDE];
 
-type Grid<T: Copy> = [Row<T>; GRID_SIDE];
+type Grid<T: Num> = [Row<T>; GRID_SIDE];
 
-type VecGrid<T: Copy> = [T; GRID_SIZE];
+type VecGrid<T: Num> = [T; GRID_SIZE];
 
 
 // DATA STRUCTURES
 
 /// Player move `enum`.
 pub enum PlayerMove {
-  Up = 0,
-  Left = 1,
-  Right = 2,
-  Down = 3,
+  Up,
+  Left,
+  Right,
+  Down,
 }
 
 /// `GameGrid` type containing the encoded grid state, defining the grid behavior.
@@ -90,13 +91,32 @@ trait Decode {
 
 /// A market trait for structures capable of exhibiting grid-like behavior
 trait GridLike: IndexMut<usize> {
-  type EntryType: Copy;
+  type EntryType: Copy + Num;
   
   /// Gets an immutable reference to the underlying state of the grid
   fn get_state(&self) -> &Grid<Self::EntryType>;
 
   /// Gets a mutable reference to the underlying state of the grid
   fn get_state_mut(&mut self) -> &mut Grid<Self::EntryType>;
+
+  /// Gets the number of zeros
+  fn get_zeros(&self) -> usize {
+    
+    let grid = self.get_state();
+    let mut count: usize = 0;
+
+    let (n, m) = (grid.len(), grid[0].len());
+
+    for i in 0..n {
+      for j in 0..m {
+        if <Self::EntryType as Zero>::is_zero(&grid[i][j]) {
+          count += 1;
+        }
+      }
+    }
+
+    count
+  }
 
 }
 
@@ -262,7 +282,7 @@ impl Decode for EncodedGameGridPrimitive {
 
 // Grid
 
-impl<T: Copy> GridLike for Grid<T> {
+impl<T: Copy + Num> GridLike for Grid<T> {
   type EntryType = T;
 
   fn get_state(&self) -> &Grid<Self::EntryType> {
@@ -275,8 +295,8 @@ impl<T: Copy> GridLike for Grid<T> {
 
 }
 
-impl<T: Copy> Transpose for Grid<T> {}
-impl<T: Copy> Reverse for Grid<T> {}
+impl<T: Copy + Num> Transpose for Grid<T> {}
+impl<T: Copy + Num> Reverse for Grid<T> {}
 
 impl Encode for Grid<GameGridPrimitive> {
   type Output = EncodedGrid;
@@ -328,8 +348,8 @@ impl LineStackingResult {
 
   // Getters
 
-  pub fn get_prev_line(&self) -> u32 { self.prev_line }
-  pub fn get_new_line(&self) -> u32 { self.new_line }
+  pub fn get_prev_line(&self) -> EncodedGameGridPrimitive { self.prev_line }
+  pub fn get_new_line(&self) -> EncodedGameGridPrimitive { self.new_line }
   pub fn get_delta_score(&self) -> u32 { self.delta_score }
   pub fn get_destinations(& self) -> Row<DestGridPrimitive> { self.destinations }
 
@@ -372,6 +392,18 @@ mod tests {
 
   use super::*;
 
+
+  #[test]
+  pub fn test_gridlike_get_zeros() {
+    let grid: GameGrid = GameGrid::new(&[
+      [0, 0, 0, 2],
+      [0, 0, 0, 0],
+      [2, 2, 2, 2],
+      [4, 4, 4, 4],
+    ]);
+
+    assert_eq!(grid.get_zeros(), 7);
+  }
 
   #[test]
   pub fn test_gamegrid_transpose() {
