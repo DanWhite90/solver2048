@@ -208,23 +208,26 @@ pub fn process_move(player_move: PlayerMove, grid: Grid<EncodedGrid>, moves_tabl
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid = Grid::<DestinationsGrid>::new(&[[0; GRID_SIDE]; GRID_SIDE]);
 
-  // TODO: IMPLEMENT EFFICIENT TRANSPOSITION AND REVERSION IN GAME GRID FROM ENCODED TO ENCODED DIRECTLY
-
-
-
-
-
-  // The search key in the HashMap has to encode also possible transpositions and reversions so it must constructed first 
-  let mut key: EncodedEntryType = 0;
+  // Transform grid to conform to left move
+  match player_move {
+    PlayerMove::Up => {
+      new_grid.transpose();
+    },
+    PlayerMove::Left => (),
+    PlayerMove::Right => {
+      new_grid.reverse();
+    },
+    PlayerMove::Down => {
+      new_grid.transpose().reverse();
+    },
+  };
 
   // find new state from move_table
   for i in 0..GRID_SIDE {
 
-    // key construction
-
     // process each row if in table, else it means that it had no effect so the old value is kept 
-    if moves_table.contains_key(&grid[i]) {
-      let result = moves_table.get(&grid[i]).unwrap();
+    if moves_table.contains_key(&new_grid[i]) {
+      let result = moves_table.get(&new_grid[i]).unwrap();
 
       new_grid[i] = result.get_new_line();
       tot_delta_score += result.get_delta_score();
@@ -233,16 +236,19 @@ pub fn process_move(player_move: PlayerMove, grid: Grid<EncodedGrid>, moves_tabl
 
   }
 
-  // process also destinations grid
+  // Rebuild original move and destination
   match player_move {
     PlayerMove::Up => {
+      new_grid.transpose();
       dest_grid.transpose();
     },
     PlayerMove::Left => (),
     PlayerMove::Right => {
+      new_grid.reverse();
       dest_grid.reverse().change_sign();
     },
     PlayerMove::Down => {
+      new_grid.reverse().transpose();
       dest_grid.reverse().transpose().change_sign();
     },
   };
