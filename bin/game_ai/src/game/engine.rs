@@ -6,8 +6,11 @@
 use std::collections::HashMap;
 
 use crate::core::*;
+use crate::{encoding, encoding::ENCODING_BITS};
+
 use super::*;
 use moves::LineStackingResult;
+
 
 //------------------------------------------------
 // Types and Definitions
@@ -44,29 +47,32 @@ impl Game {
 fn add_tile_to_position(grid: &mut Grid<EncodedGrid>, new_tile: EntryType, mut position: isize) -> &mut Grid<EncodedGrid> {
 
   // TODO: OPTIMIZE ADDITION TROUGH DIRECT ENCODING
+  let base_mask = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
+  let mut mask_j: EncodedEntryType;
 
+  // Loop through all the empty tiles 
+  for i in 0..GRID_SIDE {
+    for j in 0..GRID_SIDE {
 
-  // // Loop through all the empty tiles 
-  // for i in 0..GRID_SIDE {
-  //   for j in 0..GRID_SIDE {
+      mask_j = base_mask << ENCODING_BITS * j;
 
-  //     // Decrement the position counter only when an entry is zero
-  //     if grid[i][j] == 0 {
-  //       position -= 1;
+      // Decrement the position counter only when an entry is zero
+      if grid[i] & mask_j == 0 {
+        position -= 1;
 
-  //       // When we exhaust the position counter we found the tile and break out of the loop
-  //       if position < 0 {
-  //         grid[i][j] = new_tile;
-  //         break;
-  //       }
+        // When we exhaust the position counter we found the tile and break out of the loop
+        if position < 0 {
+          grid[i] |= encoding::encode_tile(new_tile, j);
+          break;
+        }
 
-  //     }
+      }
 
-  //   }
+    }
 
-  //   if position < 0 { break; }
+    if position < 0 { break; }
 
-  // }
+  }
 
   grid
 }

@@ -32,16 +32,19 @@ pub trait Decode {
 // Functions
 //------------------------------------------------
 
+/// Encodes a single tile and shifts it to the right position
+pub fn encode_tile(num: EntryType, position: usize) -> EncodedEntryType {
+  ((num as f64).log2() as EncodedEntryType) << ENCODING_BITS * position
+}
+
 /// Encodes a single row of tiles to a number.
 pub fn encode_line(row: &Array1D<EntryType>) -> EncodedEntryType {
   let mut num = 0;
-  let mut count = 0;
 
-  for el in row {
-    if *el != 0 {
-      num += ((*el as f64).log2() * ((ENCODING_BITS * count) as f64).exp2()) as u32;
+  for (i, &tile) in row.iter().enumerate() {
+    if tile != 0 {
+      num |= encode_tile(tile, i);
     }
-    count += 1;
   }
   num
 }
@@ -51,11 +54,11 @@ pub fn decode_line(mut num: EncodedEntryType) -> Array1D<EntryType> {
   let mut row = [0; GRID_SIDE];
   let mut tile;
 
-  for count in 0..row.len() {
-    tile = ((num % (ENCODING_BITS as f64).exp2() as u32) as f64).exp2() as u32;
+  for i in 0..GRID_SIDE {
+    tile = ((num % (ENCODING_BITS as f64).exp2() as EncodedEntryType) as f64).exp2() as EntryType;
     num >>= ENCODING_BITS;
     if tile > 1 {
-      row[count] = tile;
+      row[i] = tile;
     }
   }
   row
