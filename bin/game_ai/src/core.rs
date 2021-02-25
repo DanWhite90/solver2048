@@ -80,14 +80,22 @@ impl Grid<EncodedGrid> {
   /// Gets the number of zeros.
   pub fn get_zeros(&self) -> usize {
     let mut count: usize = 0;
-    let mut bit_mask: EncodedEntryType =  (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
+    let mut bit_mask: EncodedEntryType;
 
     for i in 0..GRID_SIDE {
+
+      // initial bit mask for the first encoded tile starting from the least significant ENCODING_BITS number of bits
+      bit_mask = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
+
+      // for each encoded tile in a single EncodedEntryType (i.e. u32)
       for _ in 0..GRID_SIDE {
+
+        // check if the bits for the encoded number are zero by masking all the other bits to 0
         if self.state[i] & bit_mask == 0 {
           count += 1;
         }
 
+        // shift bit mask to the next tile
         bit_mask <<= ENCODING_BITS;
       }
     }

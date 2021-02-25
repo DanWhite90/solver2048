@@ -4,7 +4,7 @@
 //! Contains all the base definitions and implementations for the game.
 
 pub mod moves;
-mod engine;
+pub mod engine;
 
 //------------------------------------------------
 // Core Types and Definitions
