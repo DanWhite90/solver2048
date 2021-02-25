@@ -1,11 +1,13 @@
 //! # `engine` module
 //! 
 //! This module defines the game engine module.
-//! Exposes functions to generate a new grid and new random tile given the old grid and the player move.
+//! Exposes the Game API to the user.
 
 use std::collections::HashMap;
 
+use crate::core::*;
 use super::*;
+use moves::LineStackingResult;
 
 //------------------------------------------------
 // Types and Definitions
@@ -20,7 +22,7 @@ pub enum GameState {
 }
 
 pub struct Game {
-  grid: GameGrid,
+  grid: Grid<EncodedGrid>,
   status: GameState,
 }
 
@@ -39,38 +41,41 @@ impl Game {
 //------------------------------------------------
 
 /// adds a "new_tile" value to a certain "position" in the listed empty tiles in reading order within the grid starting from 0 as the first index
-fn add_tile_to_position(grid: &mut GameGrid, new_tile: GameGridPrimitive, mut position: isize) -> &mut GameGrid {
+fn add_tile_to_position(grid: &mut Grid<EncodedGrid>, new_tile: EntryType, mut position: isize) -> &mut Grid<EncodedGrid> {
 
-  // Loop through all the empty tiles 
-  for i in 0..GRID_SIDE {
-    for j in 0..GRID_SIDE {
+  // TODO: OPTIMIZE ADDITION TROUGH DIRECT ENCODING
 
-      // Decrement the position counter only when an entry is zero
-      if grid[i][j] == 0 {
-        position -= 1;
 
-        // When we exhaust the position counter we found the tile and break out of the loop
-        if position < 0 {
-          grid[i][j] = new_tile;
-          break;
-        }
+  // // Loop through all the empty tiles 
+  // for i in 0..GRID_SIDE {
+  //   for j in 0..GRID_SIDE {
 
-      }
+  //     // Decrement the position counter only when an entry is zero
+  //     if grid[i][j] == 0 {
+  //       position -= 1;
 
-    }
+  //       // When we exhaust the position counter we found the tile and break out of the loop
+  //       if position < 0 {
+  //         grid[i][j] = new_tile;
+  //         break;
+  //       }
 
-    if position < 0 { break; }
+  //     }
 
-  }
+  //   }
+
+  //   if position < 0 { break; }
+
+  // }
 
   grid
 }
 
 /// Adds a random tile to the given `GameGrid` 
-fn add_random_tile(grid: &mut GameGrid) -> &mut GameGrid {
+fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
 
   // Generate random tile according to the probability of spawning a 2 or a 4
-  let mut new_tile: GameGridPrimitive = 2;
+  let mut new_tile: EntryType = 2;
   if rand::random::<f64>() >= PROB_TILE2 {
     new_tile = 4;
   }
@@ -82,7 +87,11 @@ fn add_random_tile(grid: &mut GameGrid) -> &mut GameGrid {
 }
 
 /// Given the `PlayerMove` and the old `GameGrid::state` produces the new state by stacking the tiles and adding a random tile
-fn state_transition<'a>(grid: &'a mut GameGrid, player_move: PlayerMove, moves_table: &HashMap<EncodedGameGridPrimitive, LineStackingResult>) -> &'a mut GameGrid {
+fn state_transition<'a>(
+  grid: &'a mut Grid<EncodedGrid>, 
+  player_move: PlayerMove, 
+  moves_table: &HashMap<EncodedEntryType, LineStackingResult>
+) -> &'a mut Grid<EncodedGrid> {
 
   moves::process_move(player_move, *grid, moves_table);
 
@@ -109,14 +118,14 @@ mod tests {
 
   #[test]
   pub fn test_add_tile_to_position() {
-    let mut grid = GameGrid::new(&[
+    let mut grid = Grid::new_from_decoded(&[
       [2, 4, 4, 0],
       [4, 2, 0, 0],
       [8, 8, 2, 2],
       [0, 0, 4, 2],
     ]);
     
-    let res = GameGrid::new(&[
+    let res = Grid::new_from_decoded(&[
       [2, 4, 4, 0],
       [4, 2, 0, 2],
       [8, 8, 2, 2],

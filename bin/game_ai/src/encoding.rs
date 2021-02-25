@@ -3,13 +3,37 @@
 //! This module allows for encoding and decoding a row state into and from a u32 number.
 //! Given the code is internal to the library no validation of the inputs is executed for maximum performance.
 
-use super::*;
+use crate::core::*;
 
 
-const ENCODING_BITS: usize = 5;
+pub const ENCODING_BITS: usize = 5;
+
+
+//------------------------------------------------
+// Traits
+//------------------------------------------------
+
+/// A trait for an object that can return and encoded version if itself
+pub trait Encode {
+  type Output;
+
+  fn get_encoded(&self) -> Self::Output;
+}
+
+/// A trait for an object that can return a decoded version of itself
+pub trait Decode {
+  type Output;
+
+  fn get_decoded(&self) -> Self::Output;
+}
+
+
+//------------------------------------------------
+// Functions
+//------------------------------------------------
 
 /// Encodes a single row of tiles to a number.
-pub fn encode_line(row: &Row<GameGridPrimitive>) -> EncodedGameGridPrimitive {
+pub fn encode_line(row: &Array1D<EntryType>) -> EncodedEntryType {
   let mut num = 0;
   let mut count = 0;
 
@@ -23,8 +47,8 @@ pub fn encode_line(row: &Row<GameGridPrimitive>) -> EncodedGameGridPrimitive {
 }
 
 /// Decodes a number to a single row of tiles.
-pub fn decode_line(mut num: u32) -> Row<GameGridPrimitive> {
-  let mut row = [0, 0, 0, 0];
+pub fn decode_line(mut num: EncodedEntryType) -> Array1D<EntryType> {
+  let mut row = [0; GRID_SIDE];
   let mut tile;
 
   for count in 0..row.len() {
@@ -38,19 +62,19 @@ pub fn decode_line(mut num: u32) -> Row<GameGridPrimitive> {
 }
 
 /// Encodes the entire grid
-pub fn encode_grid(decoded_grid: &Grid<GameGridPrimitive>) -> EncodedGrid {
+pub fn encode_grid(decoded_grid: &Array2D<EntryType>) -> EncodedGrid {
   let mut grid: EncodedGrid = [0; GRID_SIDE];
 
   for (i, decoded_line) in decoded_grid.iter().enumerate() {
-    grid[i] = encoding::encode_line(decoded_line);
+    grid[i] = encode_line(decoded_line);
   }
 
   grid
 }
 
 /// Decodes the entire grid
-pub fn decode_grid(encoded_grid: &EncodedGrid) -> Grid<GameGridPrimitive> {
-  let mut decoded_grid: Grid<GameGridPrimitive> = [[0; GRID_SIDE]; GRID_SIDE];
+pub fn decode_grid(encoded_grid: &EncodedGrid) -> Array2D<EntryType> {
+  let mut decoded_grid: Array2D<EntryType> = [[0; GRID_SIDE]; GRID_SIDE];
 
   for (i, &encoded_line) in encoded_grid.iter().enumerate() {
     decoded_grid[i] = decode_line(encoded_line);
@@ -124,7 +148,7 @@ mod tests {
 
   #[test]
   pub fn test_encode_grid() {
-    let encoded_state: EncodedGrid = encoding::encode_grid(&[
+    let encoded_state: EncodedGrid = encode_grid(&[
       [0, 2, 4, 8],
       [4, 4, 4, 4],
       [8, 8, 4, 4],
@@ -139,7 +163,7 @@ mod tests {
 
   #[test]
   pub fn test_decode_grid() {
-    let decoded_grid: Grid<GameGridPrimitive> = [
+    let decoded_grid: Array2D<EntryType> = [
       [0, 2, 4, 8],
       [4, 4, 4, 4],
       [8, 8, 4, 4],

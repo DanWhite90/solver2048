@@ -4,10 +4,9 @@
 
 use std::io::prelude::*;
 use std::fs::File;
-use std::collections::HashMap;
 
 extern crate game_ai;
-use game_ai::game;
+use game_ai::game::moves;
 
 const PATH: &str = "../../src/components/game/lib/precomputed.js";
 
@@ -16,7 +15,7 @@ fn main() {
   println!("This is the move generator");
 
   let mut file: File = File::create(PATH).expect("Error in creating file!");
-  let moves_table: HashMap<game::EncodedGameGridPrimitive, game::LineStackingResult> = game::moves::make_precomputed_hashmap();
+  let moves_table = moves::make_precomputed_hashmap();
 
   // Header 
   file.write("

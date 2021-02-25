@@ -5,6 +5,8 @@
 
 use std::collections::HashMap;
 
+use crate::core::*;
+use crate::encoding;
 use super::*;
 
 
@@ -12,12 +14,30 @@ use super::*;
 // Types and Definitions
 //------------------------------------------------
 
-const LARGEST_TILE: u32 = 65536;
+const LARGEST_TILE: EntryType = 65536;
 
 /// Struct used as an iterable object to provide all the allowed values (powers of 2) for a tile from 0 to `LARGEST_TILE`.
 struct AdmissibleTileValue {
-  value: u32,
-  prev: u32,
+  value: EntryType,
+  prev: EntryType,
+}
+
+/// Contains the information regarding the encoded processing of the move for a single row in the grid.
+/// All the values are encoded where possible.
+pub struct LineStackingResult {
+  prev_line: EncodedEntryType,
+  new_line: EncodedEntryType,
+  delta_score: u32,
+  destinations: Array1D<DestEntryType>,
+}
+
+/// Contains the information regarding the encoded processing of the move for the entire grid.
+/// All the values are encoded where possible.
+pub struct MoveResult {
+  prev_grid: Grid<EncodedGrid>,
+  new_grid: Grid<EncodedGrid>,
+  delta_score: u32,
+  destination_grid: Grid<DestinationsGrid>,
 }
 
 
@@ -25,11 +45,12 @@ struct AdmissibleTileValue {
 // Implementations
 //------------------------------------------------
 
-// AdmissibleTileValue
+
+// Inherent
 
 impl AdmissibleTileValue {
 
-  fn new(value: u32) -> AdmissibleTileValue {
+  fn new(value: EntryType) -> AdmissibleTileValue {
     AdmissibleTileValue {
       value,
       prev: 0,
@@ -38,8 +59,55 @@ impl AdmissibleTileValue {
 
 }
 
+impl LineStackingResult {
+
+  pub fn new(prev_line: &Array1D<EntryType>, new_line: &Array1D<EntryType>, delta_score: u32, destinations: &Array1D<DestEntryType>) -> Self {
+    LineStackingResult {
+      prev_line: encoding::encode_line(prev_line),
+      new_line: encoding::encode_line(new_line),
+      delta_score,
+      destinations: *destinations,
+    }
+  }
+
+  // Getters
+
+  pub fn get_prev_line(&self) -> EncodedEntryType { self.prev_line }
+  pub fn get_new_line(&self) -> EncodedEntryType { self.new_line }
+  pub fn get_delta_score(&self) -> u32 { self.delta_score }
+  pub fn get_destinations(& self) -> Array1D<DestEntryType> { self.destinations }
+
+  #[allow(dead_code)]
+  /// Formats stacking result into a valid JavaScript array declaration, to insert into `Map()` API.
+  pub fn format_js_array(&self) -> String {
+    format!("[{}, [{}, {}, {:?}]],\n", self.prev_line, self.new_line, self.delta_score, self.destinations)
+  }
+}
+
+impl MoveResult {
+
+  pub fn new(prev: &Grid<EncodedGrid>, new: &Grid<EncodedGrid>, delta: u32, dest: Grid<DestinationsGrid>) -> Self {
+    MoveResult {
+      prev_grid: *prev,
+      new_grid: *new,
+      delta_score: delta,
+      destination_grid: dest,
+    }
+  }
+
+  // Getters
+  pub fn get_prev_grid(&self) -> Grid<EncodedGrid> { self.prev_grid }
+  pub fn get_new_grid(&self) -> Grid<EncodedGrid> { self.new_grid }
+  pub fn get_delta_score(&self) -> u32 { self.delta_score }
+  pub fn get_destination_grid(&self) -> Grid<DestinationsGrid> { self.destination_grid }
+
+}
+
+
+// Iterator
+
 impl Iterator for AdmissibleTileValue {
-  type Item = u32;
+  type Item = EntryType;
 
   fn next(&mut self) -> Option<Self::Item> {
 
@@ -63,9 +131,9 @@ impl Iterator for AdmissibleTileValue {
 //------------------------------------------------
 
 /// Stacks a single row to the left according to the 2048 game rules.
-fn process_line(line: &Row<GameGridPrimitive>) -> LineStackingResult {
-  let mut new_line: Row<GameGridPrimitive> = [0; GRID_SIDE];
-  let mut destinations: Row<DestGridPrimitive> = [0; GRID_SIDE];
+fn process_line(line: &Array1D<EntryType>) -> LineStackingResult {
+  let mut new_line: Array1D<EntryType> = [0; GRID_SIDE];
+  let mut destinations: Array1D<DestEntryType> = [0; GRID_SIDE];
   let mut delta_score = 0;
   let mut k = 0;
 
@@ -101,7 +169,7 @@ fn process_line(line: &Row<GameGridPrimitive>) -> LineStackingResult {
 
 /// Function that recursively generates only and all the admissible row states to be encoded and saved in a `HashMap`.
 /// The definition allows to avoid nesting n loops for n the length of a row, and is applicable to any row length.
-fn traverse_row(row: &Row<GameGridPrimitive>, position: usize, moves_table: &mut HashMap<EncodedGameGridPrimitive, LineStackingResult>) {
+fn traverse_row(row: &Array1D<EntryType>, position: usize, moves_table: &mut HashMap<EncodedEntryType, LineStackingResult>) {
 
   if position < row.len() {
 
@@ -125,8 +193,8 @@ fn traverse_row(row: &Row<GameGridPrimitive>, position: usize, moves_table: &mut
 }
 
 /// Generates the `HashMap` of precomputed single-row moves required to speed up the processing of full-grid moves.
-pub fn make_precomputed_hashmap() -> HashMap<EncodedGameGridPrimitive, LineStackingResult> {
-  let mut moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = HashMap::new();
+pub fn make_precomputed_hashmap() -> HashMap<EncodedEntryType, LineStackingResult> {
+  let mut moves_table: HashMap<EncodedEntryType, LineStackingResult> = HashMap::new();
 
   //Generate moves
   traverse_row(&[0, 0, 0, 0], 0, &mut moves_table);
@@ -135,28 +203,27 @@ pub fn make_precomputed_hashmap() -> HashMap<EncodedGameGridPrimitive, LineStack
 }
 
 /// Process the entire `GameGrid` stacking after a move is made 
-pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &HashMap<EncodedGameGridPrimitive, LineStackingResult>) -> MoveResult {
+pub fn process_move(player_move: PlayerMove, mut grid: Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveResult {
   let prev_grid = grid;
   let mut tot_delta_score: u32 = 0;
-  let mut dest_grid: Grid<DestGridPrimitive> = [[0; GRID_SIDE]; GRID_SIDE];
+  let mut dest_grid = Grid::<DestinationsGrid>::new(&[[0; GRID_SIDE]; GRID_SIDE]);
 
-  // normalize to only operate on left moves
-  match player_move {
-    PlayerMove::Up => { grid.transpose(); },
-    PlayerMove::Left => (),
-    PlayerMove::Right => { grid.reverse(); },
-    PlayerMove::Down => { grid.transpose().reverse(); },
-  };
+  // TODO: IMPLEMENT EFFICIENT TRANSPOSITION AND REVERSION IN GAME GRID FROM ENCODED TO ENCODED DIRECTLY
+
+
+
+
+
+
 
   // find new state from move_table
   for i in 0..GRID_SIDE {
 
     // process each row if in table, else it means that it had no effect so the old value is kept 
-    let key = grid.get_encoded()[i];
-    if moves_table.contains_key(&key) {
-      let result = moves_table.get(&key).unwrap();
+    if moves_table.contains_key(&grid[i]) {
+      let result = moves_table.get(&grid[i]).unwrap();
 
-      grid[i] = encoding::decode_line(result.get_new_line());
+      grid[i] = result.get_new_line();
       tot_delta_score += result.get_delta_score();
       dest_grid[i] = result.get_destinations();
     }
@@ -166,21 +233,18 @@ pub fn process_move(player_move: PlayerMove, mut grid: GameGrid, moves_table: &H
   // restore grid
   match player_move {
     PlayerMove::Up => {
-      grid.transpose();
       dest_grid.transpose();
     },
     PlayerMove::Left => (),
     PlayerMove::Right => {
-      grid.reverse();
       dest_grid.reverse().change_sign();
     },
     PlayerMove::Down => {
-      grid.reverse().transpose();
       dest_grid.reverse().transpose().change_sign();
     },
   };
 
-  MoveResult::new(prev_grid.get_encoded(), grid.get_encoded(), tot_delta_score, dest_grid)
+  MoveResult::new(&prev_grid, &grid, tot_delta_score, dest_grid)
 }
 
 
@@ -291,128 +355,128 @@ mod tests {
 
   #[test]
   pub fn test_up_move() {
-    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table = make_precomputed_hashmap();
 
-    let grid: GameGrid = GameGrid::new(&[
+    let grid = Grid::new_from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid: GameGrid = GameGrid::new(&[
+    let new_grid = Grid::new_from_decoded(&[
       [2, 4, 4, 4],
       [8, 0, 8, 0],
       [0, 0, 0, 0],
       [0, 0, 0, 0],
     ]);
 
-    let dest_grid: Grid<DestGridPrimitive> = [
+    let dest_grid = Grid::<DestinationsGrid>::new(&[
       [0, 0, 0, 0],
       [-1, -1, -1, -1],
       [0, 0, -1, 0],
       [-2, 0, -2, -3],
-    ];
+    ]);
 
-    let result: MoveResult = process_move(PlayerMove::Up, grid, &moves_table);
+    let result = process_move(PlayerMove::Up, grid, &moves_table);
 
-    assert_eq!(result.get_new_grid(), new_grid.get_encoded(), "\n{}{}\n", GameGrid::new(&encoding::decode_grid(&result.get_new_grid())), new_grid);
+    assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 20);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }
 
   #[test]
   pub fn test_left_move() {
-    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table = make_precomputed_hashmap();
 
-    let grid: GameGrid = GameGrid::new(&[
+    let grid = Grid::new_from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid: GameGrid = GameGrid::new(&[
+    let new_grid = Grid::new_from_decoded(&[
       [4, 0, 0, 0],
       [4, 4, 0, 0],
       [4, 0, 0, 0],
       [8, 4, 2, 0],
     ]);
 
-    let dest_grid: Grid<DestGridPrimitive> = [
+    let dest_grid = Grid::<DestinationsGrid>::new(&[
       [0, -1, -2, 0],
       [0, -1, -1, -2],
       [0, 0, -2, 0],
       [0, 0, -1, -1],
-    ];
+    ]);
 
     let result: MoveResult = process_move(PlayerMove::Left, grid, &moves_table);
 
-    assert_eq!(result.get_new_grid(), new_grid.get_encoded(), "\n{}{}\n", GameGrid::new(&encoding::decode_grid(&result.get_new_grid())), new_grid);
+    assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 12);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }
 
   #[test]
   pub fn test_right_move() {
-    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table = make_precomputed_hashmap();
 
-    let grid: GameGrid = GameGrid::new(&[
+    let grid = Grid::new_from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid: GameGrid = GameGrid::new(&[
+    let new_grid = Grid::new_from_decoded(&[
       [0, 0, 0, 4],
       [0, 0, 4, 4],
       [0, 0, 0, 4],
       [0, 8, 4, 2],
     ]);
 
-    let dest_grid: Grid<DestGridPrimitive> = [
+    let dest_grid = Grid::<DestinationsGrid>::new(&[
       [0, 2, 1, 0],
       [2, 1, 1, 0],
       [0, 0, 1, 0],
       [1, 0, 0, 0],
-    ];
+    ]);
 
     let result: MoveResult = process_move(PlayerMove::Right, grid, &moves_table);
 
-    assert_eq!(result.get_new_grid(), new_grid.get_encoded(), "\n{}{}\n", GameGrid::new(&encoding::decode_grid(&result.get_new_grid())), new_grid);
+    assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 12);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }
 
   #[test]
   pub fn test_down_move() {
-    let moves_table: HashMap<EncodedGameGridPrimitive, LineStackingResult> = crate::game::moves::make_precomputed_hashmap();
+    let moves_table = make_precomputed_hashmap();
 
-    let grid: GameGrid = GameGrid::new(&[
+    let grid = Grid::new_from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid: GameGrid = GameGrid::new(&[
+    let new_grid = Grid::new_from_decoded(&[
       [0, 0, 0, 0],
       [0, 0, 0, 0],
       [2, 0, 4, 0],
       [8, 4, 8, 4],
     ]);
 
-    let dest_grid: Grid<DestGridPrimitive> = [
+    let dest_grid = Grid::<DestinationsGrid>::new(&[
       [0, 3, 2, 0],
       [1, 2, 1, 2],
       [0, 0, 1, 0],
       [0, 0, 0, 0],
-    ];
+    ]);
 
     let result: MoveResult = process_move(PlayerMove::Down, grid, &moves_table);
 
-    assert_eq!(result.get_new_grid(), new_grid.get_encoded());
+    assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 20);
     assert_eq!(result.get_destination_grid(), dest_grid);
   }
