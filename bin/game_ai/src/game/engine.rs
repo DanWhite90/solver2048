@@ -1,12 +1,11 @@
 //! # `engine` module
 //! 
-//! This module defines the game engine module.
+//! This module defines the game logic functionalities.
 //! Exposes the Game API to the user.
 
 use std::collections::HashMap;
 
 use crate::core::*;
-use crate::{encoding, encoding::ENCODING_BITS};
 
 use super::*;
 use moves::LineStackingResult;
@@ -16,17 +15,19 @@ use moves::LineStackingResult;
 // Types and Definitions
 //------------------------------------------------
 
-const PROB_TILE2: f64 = 0.9;
-
+/// `enum` encoding the status of the `Game`, values are: {`New`, `Playing`, `Over`}.
+#[derive(Copy, Clone)]
 pub enum GameState {
   New,
   Playing,
   Over,
 }
 
+/// The `Game` object the player interacts with.
 pub struct Game {
   grid: Grid<EncodedGrid>,
   status: GameState,
+  precomputed_moves: HashMap<EncodedEntryType, LineStackingResult>,
 }
 
 
@@ -34,7 +35,50 @@ pub struct Game {
 // Implementations
 //------------------------------------------------
 
+// Inherent
+
 impl Game {
+
+  /// Constructor.
+  pub fn new() -> Self {
+    Game {
+      grid: *add_random_tile(&mut Grid::new(&[0; GRID_SIDE])),
+      status: GameState::New,
+      precomputed_moves: moves::make_precomputed_hashmap(),
+    }
+  }
+
+  /// Reset the game
+  pub fn reset(&mut self) {
+    self.grid = *add_random_tile(&mut Grid::new(&[0; GRID_SIDE]));
+    self.status = GameState::New;
+  }
+
+  /// Gets an immutable reference to the content of the encoded game grid of the game.
+  pub fn get_grid(&self) -> &Grid<EncodedGrid> {
+    &self.grid
+  }
+
+  /// Gets the status of the game.
+  pub fn get_status(&self) -> GameState {
+    self.status
+  }
+
+  /// Gets an immutable reference to the precomuted partial moves `HashMap<EncodedEntryType, LineStackingResult>`.
+  pub fn get_precomputed_moves(&self) -> &HashMap<EncodedEntryType, LineStackingResult> {
+    &self.precomputed_moves
+  }
+
+  /// Process the `PlayerMove` to transition to a new grid state by stacking the grid and adding a random tile
+  pub fn process_move(&mut self, player_move: PlayerMove) {
+    let move_result = moves::process_grid_stacking(player_move, self.grid, &self.precomputed_moves);
+
+    // TODO:
+    // - Validate move
+    // - Check if it causes game over
+    // - Check if it causes a victory
+
+  }
   
 }
 
@@ -43,42 +87,8 @@ impl Game {
 // Functions
 //------------------------------------------------
 
-/// adds a "new_tile" value to a certain "position" in the listed empty tiles in reading order within the grid starting from 0 as the first index
-fn add_tile_to_position(grid: &mut Grid<EncodedGrid>, new_tile: EntryType, mut position: isize) -> &mut Grid<EncodedGrid> {
-
-  // TODO: OPTIMIZE ADDITION TROUGH DIRECT ENCODING
-  let base_mask = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
-  let mut mask_j: EncodedEntryType;
-
-  // Loop through all the empty tiles 
-  for i in 0..GRID_SIDE {
-    for j in 0..GRID_SIDE {
-
-      mask_j = base_mask << ENCODING_BITS * j;
-
-      // Decrement the position counter only when an entry is zero
-      if grid[i] & mask_j == 0 {
-        position -= 1;
-
-        // When we exhaust the position counter we found the tile and break out of the loop
-        if position < 0 {
-          grid[i] |= encoding::encode_tile(new_tile, j);
-          break;
-        }
-
-      }
-
-    }
-
-    if position < 0 { break; }
-
-  }
-
-  grid
-}
-
-/// Adds a random tile to the given `GameGrid` 
-fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
+/// Adds a random tile to the grid
+pub fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
 
   // Generate random tile according to the probability of spawning a 2 or a 4
   let mut new_tile: EntryType = 2;
@@ -89,27 +99,34 @@ fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
   // Get a position among the empty tiles in the grid in "reading order" where we place the new tile
   let position: isize = (rand::random::<f64>() * grid.get_zeros() as f64) as isize;
 
-  add_tile_to_position(grid, new_tile, position)
+  grid.add_tile_to_position(new_tile, position)
 }
 
-/// Given the `PlayerMove` and the old `GameGrid::state` produces the new state by stacking the tiles and adding a random tile
-fn state_transition<'a>(
-  grid: &'a mut Grid<EncodedGrid>, 
-  player_move: PlayerMove, 
-  moves_table: &HashMap<EncodedEntryType, LineStackingResult>
-) -> &'a mut Grid<EncodedGrid> {
+/// Checks if a game grid is in a victory state 
+pub fn is_victory(grid: &Grid<EncodedGrid>) -> bool {
 
-  moves::process_move(player_move, *grid, moves_table);
+  let mut bit_mask = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
 
-  // TO BE COMPLETED
+  // Run through each column first to change the bit_mask in O(n) time rather than O(n^2)
+  for j in 0..GRID_SIDE {
 
-  // Need also to:
-  // - Refactor core types into ./src/core.rs
-  // - Add struct Game {} for Game state management to export to wasm
-  // - Make process_move() encoded to encoded for max speed avoiding translation, transposition and reversion
-  // - Make process_move() to work on mutable references of grid to allow ai module to process moves as well
+    for i in 0..GRID_SIDE {
 
-  grid
+      // check if the masked number shifted back to the least significant bit is greater than or equal to the log2 of the victory threshold
+      if (grid.state[i] & bit_mask) >> ENCODING_BITS * j >= (VICTORY_THRESHOLD as f64).log2() as EncodedEntryType {
+        return true;
+      }
+    }
+    
+    // shift to new column
+    bit_mask <<= ENCODING_BITS * j;
+  }
+
+  false
+}
+
+pub fn is_game_over(grid: &Grid<EncodedGrid>) -> bool {
+  false
 }
 
 
@@ -123,24 +140,27 @@ mod tests {
   use super::*;
 
   #[test]
-  pub fn test_add_tile_to_position() {
-    let mut grid = Grid::new_from_decoded(&[
-      [2, 4, 4, 0],
-      [4, 2, 0, 0],
-      [8, 8, 2, 2],
-      [0, 0, 4, 2],
-    ]);
-    
-    let res = Grid::new_from_decoded(&[
-      [2, 4, 4, 0],
-      [4, 2, 0, 2],
-      [8, 8, 2, 2],
-      [0, 0, 4, 2],
+  pub fn test_is_victory_false() {
+    let grid = Grid::new_from_decoded(&[
+      [0, 0, 0, 2],
+      [0, 0, 2, 8],
+      [0, 0, 4, 8],
+      [0, 1024, 4, 4],
     ]);
 
-    add_tile_to_position(&mut grid, 2, 2);
+    assert_eq!(is_victory(&grid), false);
+  }
 
-    assert_eq!(*grid.get_state(), *res.get_state());
+  #[test]
+  pub fn test_is_victory_true() {
+    let grid = Grid::new_from_decoded(&[
+      [0, 0, 0, 2],
+      [0, 0, 2, 8],
+      [0, 0, 4, 8],
+      [0, 4, 4, 2048],
+    ]);
+
+    assert_eq!(is_victory(&grid), true);
   }
 
 }

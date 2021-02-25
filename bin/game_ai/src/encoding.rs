@@ -1,12 +1,9 @@
 //! # `encoding` module
 //! 
 //! This module allows for encoding and decoding a row state into and from a u32 number.
-//! Given the code is internal to the library no validation of the inputs is executed for maximum performance.
+//! No validation of the inputs is executed for maximum performance.
 
 use crate::core::*;
-
-
-pub const ENCODING_BITS: usize = 5;
 
 
 //------------------------------------------------
