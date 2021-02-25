@@ -203,8 +203,8 @@ pub fn make_precomputed_hashmap() -> HashMap<EncodedEntryType, LineStackingResul
 }
 
 /// Process the entire `GameGrid` stacking after a move is made 
-pub fn process_move(player_move: PlayerMove, mut grid: Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveResult {
-  let prev_grid = grid;
+pub fn process_move(player_move: PlayerMove, grid: Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveResult {
+  let mut new_grid = grid;
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid = Grid::<DestinationsGrid>::new(&[[0; GRID_SIDE]; GRID_SIDE]);
 
@@ -214,23 +214,26 @@ pub fn process_move(player_move: PlayerMove, mut grid: Grid<EncodedGrid>, moves_
 
 
 
-
+  // The search key in the HashMap has to encode also possible transpositions and reversions so it must constructed first 
+  let mut key: EncodedEntryType = 0;
 
   // find new state from move_table
   for i in 0..GRID_SIDE {
+
+    // key construction
 
     // process each row if in table, else it means that it had no effect so the old value is kept 
     if moves_table.contains_key(&grid[i]) {
       let result = moves_table.get(&grid[i]).unwrap();
 
-      grid[i] = result.get_new_line();
+      new_grid[i] = result.get_new_line();
       tot_delta_score += result.get_delta_score();
       dest_grid[i] = result.get_destinations();
     }
 
   }
 
-  // restore grid
+  // process also destinations grid
   match player_move {
     PlayerMove::Up => {
       dest_grid.transpose();
@@ -244,7 +247,7 @@ pub fn process_move(player_move: PlayerMove, mut grid: Grid<EncodedGrid>, moves_
     },
   };
 
-  MoveResult::new(&prev_grid, &grid, tot_delta_score, dest_grid)
+  MoveResult::new(&grid, &new_grid, tot_delta_score, dest_grid)
 }
 
 

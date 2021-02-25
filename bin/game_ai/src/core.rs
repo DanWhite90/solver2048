@@ -43,8 +43,26 @@ pub struct Grid<T: GridState> {
 // Traits
 //------------------------------------------------
 
-/// Marker trait to label the types allowed for `Grid<T: GridState>`
+/// Marker trait to label the types allowed for `Grid<T: GridState>`.
 pub trait GridState: Copy + IndexMut<usize> + Eq {}
+
+// Trait for transposing the grid
+pub trait Transpose {
+
+  /// Transposes the grid in place and returns a mutable reference of itself for chaining.
+  fn transpose(&mut self) -> &mut Self;
+    
+}
+
+// Trait for Reverse 
+pub trait Reverse {
+
+  /// Horizontally reverses the grid in place and returns a mutable reference of itself for chaining.
+  fn reverse(&mut self) -> &mut Self;
+
+}
+
+
 
 
 //------------------------------------------------
@@ -107,44 +125,6 @@ impl Grid<EncodedGrid> {
 
 impl Grid<DestinationsGrid> {
 
-  /// Transposes the grid in place and returns the mutable reference to itself for chaining.
-  pub fn transpose(&mut self) -> &mut Self {
-
-    let grid = &mut self.state;
-
-    let (n, m) = (grid.len(), grid[0].len());
-
-    let mut tmp;
-    for i in 0..n {
-      for j in (i + 1)..m {
-        tmp = grid[i][j];
-        grid[i][j] = grid[j][i];
-        grid[j][i] = tmp;
-      }
-    }
-
-    self
-  }
-  
-  /// Reverses the grid in place horizontally and returns the mutable reference to itself for chaining.
-  pub fn reverse(&mut self) -> &mut Self {
-
-    let grid = &mut self.state;
-    
-    let (n, m) = (grid.len(), grid[0].len());
-
-    let mut tmp;
-    for i in 0..n {
-      for j in 0..(m / 2) {
-        tmp = grid[i][j];
-        grid[i][j] = grid[i][m - 1 - j];
-        grid[i][m - 1 - j] = tmp;
-      }
-    }
-
-    self
-  }
-
   /// Changes the sign of the entries in place and returns the mutable reference to itself for chaining.
   pub fn change_sign(&mut self) -> &mut Self {
 
@@ -174,6 +154,106 @@ impl encoding::Decode for Grid<EncodedGrid> {
     encoding::decode_grid(&self.state)
   }
 
+}
+
+
+// Transpose
+
+impl Transpose for Grid<EncodedGrid> {
+
+  fn transpose(&mut self) -> &mut Self {
+
+    let base_mask = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
+
+    let mut mask_i: EncodedEntryType;
+    let mut mask_j: EncodedEntryType;
+    let mut delta_pos;
+    let mut tmp: EncodedEntryType;
+
+    for i in 0..GRID_SIDE {
+      mask_i = base_mask << ENCODING_BITS * i;
+
+      for j in (i + 1)..GRID_SIDE {
+        mask_j = base_mask << ENCODING_BITS * j;
+        delta_pos = ENCODING_BITS * (j - i);
+
+        tmp = (self.state[i] & mask_j) >> delta_pos;
+        self.state[i] = self.state[i] & !mask_j | (self.state[j] & mask_i) << delta_pos;
+        self.state[j] = self.state[j] & !mask_i | tmp;
+      }
+    }
+
+    self
+  }
+
+}
+
+impl Transpose for Grid<DestinationsGrid> {
+
+  fn transpose(&mut self) -> &mut Self {
+
+    let mut tmp;
+    for i in 0..GRID_SIDE {
+      for j in (i + 1)..GRID_SIDE {
+        tmp = self.state[i][j];
+        self.state[i][j] = self.state[j][i];
+        self.state[j][i] = tmp;
+      }
+    }
+
+    self
+  }
+  
+}
+
+
+// Reverse
+
+impl Reverse for Grid<EncodedGrid> {
+
+  fn reverse(&mut self) -> &mut Self {
+
+    let base_mask = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
+
+    let mut mask_j: EncodedEntryType;
+    let mut mask_n_j: EncodedEntryType;
+    let mut delta_pos;
+    let mut tmp: EncodedEntryType;
+
+    for i in 0..GRID_SIDE {
+
+      for j in 0..(GRID_SIDE / 2) {
+        mask_j = base_mask << ENCODING_BITS * j;
+        mask_n_j = base_mask << ENCODING_BITS * (GRID_SIDE - 1 - j);
+        delta_pos = ENCODING_BITS * (GRID_SIDE - 1 - 2 * j);
+
+        tmp = (self.state[i] & mask_j) << delta_pos;
+        self.state[i] = self.state[i] & !mask_j | (self.state[i] & mask_n_j) >> delta_pos;
+        self.state[i] = self.state[i] & !mask_n_j | tmp;
+      }
+    }
+
+    self
+  }
+
+}
+
+impl Reverse for Grid<DestinationsGrid> {
+
+  fn reverse(&mut self) -> &mut Self {
+    
+    let mut tmp;
+    for i in 0..GRID_SIDE {
+      for j in 0..(GRID_SIDE / 2) {
+        tmp = self.state[i][j];
+        self.state[i][j] = self.state[i][GRID_SIDE - 1 - j];
+        self.state[i][GRID_SIDE - 1 - j] = tmp;
+      }
+    }
+    
+    self
+  }
+  
 }
 
 
@@ -294,6 +374,44 @@ mod tests {
   }
 
   #[test]
+  pub fn test_gamegrid_transpose() {
+    let mut grid = Grid::new_from_decoded(&[
+      [0, 2, 4, 8],
+      [4, 4, 4, 4],
+      [8, 8, 4, 4],
+      [8, 4, 2, 2],
+    ]);
+
+    let res = Grid::new_from_decoded(&[
+      [0, 4, 8, 8],
+      [2, 4, 8, 4],
+      [4, 4, 4, 2],
+      [8, 4, 4, 2],
+    ]);
+
+    assert_eq!(*grid.transpose().get_state(), *res.get_state());
+  }
+
+  #[test]
+  pub fn test_gamegrid_reverse() {
+    let mut grid = Grid::new_from_decoded(&[
+      [0, 2, 4, 8],
+      [4, 4, 4, 4],
+      [8, 8, 4, 4],
+      [8, 4, 2, 2],
+    ]);
+
+    let res = Grid::new_from_decoded(&[
+      [8, 4, 2, 0],
+      [4, 4, 4, 4],
+      [4, 4, 8, 8],
+      [2, 2, 4, 8],
+    ]);
+
+    assert_eq!(*grid.reverse().get_state(), *res.get_state());
+  }
+
+  #[test]
   pub fn test_destgrid_transpose() {
     let mut grid = Grid::<DestinationsGrid>::new(&[
       [0, 2, 4, 8],
@@ -313,7 +431,7 @@ mod tests {
   }
 
   #[test]
-  pub fn test_gamegrid_reverse() {
+  pub fn test_destgrid_reverse() {
     let mut grid = Grid::<DestinationsGrid>::new(&[
       [0, 2, 4, 8],
       [4, 4, 4, 4],
