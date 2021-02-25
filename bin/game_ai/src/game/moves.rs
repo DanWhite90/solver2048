@@ -85,12 +85,12 @@ impl LineStackingResult {
 
 impl MoveResult {
 
-  pub fn new(prev: &Grid<EncodedGrid>, new: &Grid<EncodedGrid>, delta: u32, dest: Grid<DestinationsGrid>) -> Self {
+  pub fn new(prev: &Grid<EncodedGrid>, new: &Grid<EncodedGrid>, delta: u32, dest: &Grid<DestinationsGrid>) -> Self {
     MoveResult {
       prev_grid: *prev,
       new_grid: *new,
       delta_score: delta,
-      destination_grid: dest,
+      destination_grid: *dest,
     }
   }
 
@@ -252,7 +252,7 @@ pub fn process_grid_stacking(player_move: PlayerMove, grid: Grid<EncodedGrid>, m
     },
   };
 
-  MoveResult::new(&grid, &new_grid, tot_delta_score, dest_grid)
+  MoveResult::new(&grid, &new_grid, tot_delta_score, &dest_grid)
 }
 
 

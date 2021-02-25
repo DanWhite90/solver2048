@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use crate::core::*;
 
 use super::*;
-use moves::LineStackingResult;
+use moves::{LineStackingResult, MoveResult};
 
 
 //------------------------------------------------
@@ -27,6 +27,7 @@ pub enum GameState {
 pub struct Game {
   grid: Grid<EncodedGrid>,
   status: GameState,
+  victory: bool,
   precomputed_moves: HashMap<EncodedEntryType, LineStackingResult>,
 }
 
@@ -44,6 +45,7 @@ impl Game {
     Game {
       grid: *add_random_tile(&mut Grid::new(&[0; GRID_SIDE])),
       status: GameState::New,
+      victory: false,
       precomputed_moves: moves::make_precomputed_hashmap(),
     }
   }
@@ -52,6 +54,7 @@ impl Game {
   pub fn reset(&mut self) {
     self.grid = *add_random_tile(&mut Grid::new(&[0; GRID_SIDE]));
     self.status = GameState::New;
+    self.victory = false;
   }
 
   /// Gets an immutable reference to the content of the encoded game grid of the game.
@@ -62,6 +65,11 @@ impl Game {
   /// Gets the status of the game.
   pub fn get_status(&self) -> GameState {
     self.status
+  }
+
+  /// Gets the status of the game.
+  pub fn get_victory(&self) -> bool {
+    self.victory
   }
 
   /// Gets an immutable reference to the precomuted partial moves `HashMap<EncodedEntryType, LineStackingResult>`.
@@ -125,7 +133,33 @@ pub fn is_victory(grid: &Grid<EncodedGrid>) -> bool {
   false
 }
 
-pub fn is_game_over(grid: &Grid<EncodedGrid>) -> bool {
+pub fn is_game_over(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> bool {
+
+  // Progressive optimization, if at least one entry is zero you can always make a move
+  if grid.get_zeros() > 0 { return false; }
+
+  // When the grid is full, if at least one move is possible then it's not game over
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Up, *grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Left, *grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Right, *grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Down, *grid, moves_table)) { return false; }
+
+  // No move is possible, game over
+  true
+}
+
+fn is_effective_move(move_result: &MoveResult) -> bool {
+
+  let dest_grid = move_result.get_destination_grid();
+
+  for i in 0..GRID_SIDE {
+    for j in 0..GRID_SIDE {
+      if dest_grid[i][j] != 0 {
+        return true;
+      }
+    }
+  }
+
   false
 }
 
@@ -161,6 +195,71 @@ mod tests {
     ]);
 
     assert_eq!(is_victory(&grid), true);
+  }
+
+  #[test]
+  pub fn test_is_effective_move_false() {
+    let move_result = MoveResult::new(
+      &Grid::new(&[0; GRID_SIDE]),
+      &Grid::new(&[0; GRID_SIDE]),
+      0,
+      &Grid::new(&[[0; GRID_SIDE]; GRID_SIDE]),
+    );
+
+    assert_eq!(is_effective_move(&move_result), false);
+  }
+
+  #[test]
+  pub fn test_is_effective_move_true() {
+    let move_result = MoveResult::new(
+      &Grid::new(&[0; GRID_SIDE]),
+      &Grid::new(&[0; GRID_SIDE]),
+      0,
+      &Grid::new(&[
+        [0, -1, 0, 0],
+        [0; GRID_SIDE],
+        [0; GRID_SIDE],
+        [0; GRID_SIDE],
+      ]),
+    );
+
+    assert_eq!(is_effective_move(&move_result), true);
+  }
+
+  #[test]
+  pub fn test_is_game_over_on_sparse_grid() {
+    let grid = Grid::new_from_decoded(&[
+      [0, 4, 4, 8],
+      [2, 4, 8, 8],
+      [2, 0, 0, 8],
+      [2, 2, 8, 8],
+    ]);
+
+    assert_eq!(is_game_over(&grid, &moves::make_precomputed_hashmap()), false);
+  }
+
+  #[test]
+  pub fn test_is_game_over_on_full_non_game_over() {
+    let grid = Grid::new_from_decoded(&[
+      [2, 4, 2, 2],
+      [4, 2, 4, 2],
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+    ]);
+
+    assert_eq!(is_game_over(&grid, &moves::make_precomputed_hashmap()), false);
+  }
+
+  #[test]
+  pub fn test_is_game_over_on_full_game_over() {
+    let grid = Grid::new_from_decoded(&[
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+    ]);
+
+    assert_eq!(is_game_over(&grid, &moves::make_precomputed_hashmap()), true);
   }
 
 }
