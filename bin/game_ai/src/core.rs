@@ -2,7 +2,6 @@
 //! 
 //! This module contains the core types and definitions for the entire project.
 
-use num_traits::Num;
 use std::{fmt, fmt::Display};
 use std::ops::{Index, IndexMut};
 
@@ -24,8 +23,8 @@ pub type EntryType = u32;
 pub type EncodedEntryType = u32;
 pub type DestEntryType = i8;
 
-pub type Array1D<T: Num> = [T; GRID_SIDE];
-pub type Array2D<T: Num> = [Array1D<T>; GRID_SIDE];
+pub type Array1D<T> = [T; GRID_SIDE];
+pub type Array2D<T> = [Array1D<T>; GRID_SIDE];
 
 pub type EncodedGrid = Array1D<EncodedEntryType>;
 pub type DestinationsGrid = Array2D<DestEntryType>;
@@ -34,6 +33,7 @@ pub type DestinationsGrid = Array2D<DestEntryType>;
 // DATA STRUCTURES
 
 /// Grid type containing encapsulating it's state.
+#[derive(Debug)]
 pub struct Grid<T: GridState> {
   state: T,
 }
@@ -44,7 +44,7 @@ pub struct Grid<T: GridState> {
 //------------------------------------------------
 
 /// Marker trait to label the types allowed for `Grid<T: GridState>`
-pub trait GridState: Copy + IndexMut<usize> {}
+pub trait GridState: Copy + IndexMut<usize> + Eq {}
 
 
 //------------------------------------------------
@@ -83,7 +83,7 @@ impl Grid<EncodedGrid> {
     let mut bit_mask: EncodedEntryType =  (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
 
     for i in 0..GRID_SIDE {
-      for j in 0..GRID_SIDE {
+      for _ in 0..GRID_SIDE {
         if self.state[i] & bit_mask == 0 {
           count += 1;
         }
@@ -248,6 +248,19 @@ impl IndexMut<usize> for Grid<DestinationsGrid> {
   }
 
 }
+
+
+// PartialEq and Eq
+
+impl<T: GridState> PartialEq for Grid<T> {
+
+  fn eq(&self, other: &Self) -> bool {
+    self.state == other.state
+  }
+
+}
+
+impl<T: GridState> Eq for Grid<T> {}
 
 
 //------------------------------------------------
