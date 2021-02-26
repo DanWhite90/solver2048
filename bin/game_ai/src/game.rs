@@ -9,7 +9,7 @@ pub mod engine;
 use std::{fmt, fmt::Display};
 use std::ops::{Index, IndexMut};
 
-use crate::core::*;
+pub use crate::core::*;
 use crate::encoding;
 
 

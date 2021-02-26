@@ -16,7 +16,7 @@ use super::*;
 //------------------------------------------------
 
 /// Player move `enum`.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PlayerMove {
   Up,
   Left,
