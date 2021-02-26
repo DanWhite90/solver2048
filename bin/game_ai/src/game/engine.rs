@@ -190,7 +190,7 @@ impl GameState {
 //------------------------------------------------
 
 /// Adds a random tile to the grid
-pub fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
+fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
 
   // Generate random tile according to the probability of spawning a 2 or a 4
   let mut new_tile: EntryType = 2;
@@ -243,7 +243,7 @@ pub fn is_game_over(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntry
   true
 }
 
-/// Checks if the result of a move describes a change in the state of the grid
+/// Checks if the result of a move (not the possible effect of a `PlayerMove`) describes a change in the state of the grid
 pub fn is_effective_move(move_result: &MoveStackingResult) -> bool {
 
   let dest_grid = move_result.get_destination_grid();
