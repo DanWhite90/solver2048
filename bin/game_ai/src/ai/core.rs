@@ -2,6 +2,7 @@
 //! 
 //! Contains the basic definitions and implementations for the objects used by the AI engine.
 
+use std::ops::{Index, IndexMut};
 
 use crate::game::*;
 use crate::game::moves::PlayerMove;
@@ -44,15 +45,35 @@ impl AITree {
 
 }
 
+
 // Index and IndexMut
 
+impl Index<usize> for AITree {
+  type Output = Option<AINode>;
+  
+  fn index(&self, index: usize) -> &Self::Output {
+    &self.data[index]
+  }
 
+}
+
+impl IndexMut<usize> for AITree {
+  
+  fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+    &mut self.data[index]
+  }
+
+}
+
+// TODO: possibly add indexing for path
 
 
 //------------------------------------------------
 // Functions
 //------------------------------------------------
 
+pub fn get_child_index() {}
+pub fn get_parent_index() {}
 
 
 
