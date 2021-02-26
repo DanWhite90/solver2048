@@ -3,12 +3,12 @@
 //! This module defines the game logic functionalities.
 //! Exposes the Game API to the user.
 
-use std::collections::HashMap;
+use std::collections::{VecDeque, HashMap};
 
 use crate::core::*;
 
 use super::*;
-use moves::{LineStackingResult, MoveResult};
+use moves::*;
 
 
 //------------------------------------------------
@@ -16,19 +16,29 @@ use moves::{LineStackingResult, MoveResult};
 //------------------------------------------------
 
 /// `enum` encoding the status of the `Game`, values are: {`New`, `Playing`, `Over`}.
-#[derive(Copy, Clone)]
-pub enum GameState {
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub enum GameStatus {
   New,
   Playing,
   Over,
 }
 
-/// The `Game` object the player interacts with.
+/// The `Game` object that implements the public API.
+/// The grid history is a double ended list where states are added to the front and popped from the back when the limit is reached. 
 pub struct Game {
   grid: Grid<EncodedGrid>,
-  status: GameState,
-  victory: bool,
+  state: GameState,
+  grid_history: VecDeque<Grid<EncodedGrid>>,
   precomputed_moves: HashMap<EncodedEntryType, LineStackingResult>,
+}
+
+/// The object containing the state of the game. Returned at each move processed.
+#[derive(Copy, Clone)]
+pub struct GameState {
+  status: GameStatus,
+  move_count: u32,
+  score: u32,
+  victory: bool,
 }
 
 
@@ -44,8 +54,8 @@ impl Game {
   pub fn new() -> Self {
     Game {
       grid: *add_random_tile(&mut Grid::new(&[0; GRID_SIDE])),
-      status: GameState::New,
-      victory: false,
+      state: GameState::new(),
+      grid_history: VecDeque::with_capacity(HISTORY_LENGTH),
       precomputed_moves: moves::make_precomputed_hashmap(),
     }
   }
@@ -53,41 +63,107 @@ impl Game {
   /// Reset the game
   pub fn reset(&mut self) {
     self.grid = *add_random_tile(&mut Grid::new(&[0; GRID_SIDE]));
-    self.status = GameState::New;
-    self.victory = false;
+    self.state = GameState::new();
+    self.grid_history = VecDeque::with_capacity(HISTORY_LENGTH);
   }
 
-  /// Gets an immutable reference to the content of the encoded game grid of the game.
-  pub fn get_grid(&self) -> &Grid<EncodedGrid> {
-    &self.grid
-  }
-
-  /// Gets the status of the game.
-  pub fn get_status(&self) -> GameState {
-    self.status
-  }
-
-  /// Gets the status of the game.
-  pub fn get_victory(&self) -> bool {
-    self.victory
-  }
-
-  /// Gets an immutable reference to the precomuted partial moves `HashMap<EncodedEntryType, LineStackingResult>`.
-  pub fn get_precomputed_moves(&self) -> &HashMap<EncodedEntryType, LineStackingResult> {
-    &self.precomputed_moves
-  }
+  // Getters
+  pub fn get_grid(&self) -> &Grid<EncodedGrid> { &self.grid }
+  pub fn get_state(&self) -> &GameState { &self.state }
+  pub fn get_precomputed_moves(&self) -> &HashMap<EncodedEntryType, LineStackingResult> { &self.precomputed_moves }
 
   /// Process the `PlayerMove` to transition to a new grid state by stacking the grid and adding a random tile
-  pub fn process_move(&mut self, player_move: PlayerMove) {
-    let move_result = moves::process_grid_stacking(player_move, self.grid, &self.precomputed_moves);
+  pub fn process_move(&mut self, player_move: PlayerMove) -> GameState {
 
-    // TODO:
-    // - Validate move
-    // - Check if it causes game over
-    // - Check if it causes a victory
+    match self.state.get_status() {
+
+      // Process move only if not in a terminating state of the game
+      GameStatus::New | GameStatus::Playing => {
+
+        let move_result = moves::process_grid_stacking(player_move, self.grid, &self.precomputed_moves);
+
+        // Process the move only if it produced effects, otherwise it's null and ignored
+        if is_effective_move(&move_result) {
+
+          // Append old grid to history 
+          if self.grid_history.len() >= HISTORY_LENGTH {
+            self.grid_history.pop_back();
+          }
+          self.grid_history.push_front(self.grid);
+
+          // Update grid
+          self.grid = *move_result.get_new_grid();
+
+          // Update score
+          self.state.inc_score(move_result.get_delta_score());
+
+          // Update move count
+          self.state.inc_move_count();
+
+          // Add new random tile. There's always an empty tile after a valid move so no check needed
+          add_random_tile(&mut self.grid);
+
+          // Update victory. Executed only the first time victory is achieved
+          if !self.state.get_victory() && is_victory(&self.grid) {
+            self.state.set_victory(true);
+          }
+
+          // After adding a tile check if game over
+          if is_game_over(&self.grid , &self.precomputed_moves) {
+            self.state.set_status(GameStatus::Over);
+          
+          // otherwise if it's the first valid move of the game set state to playing
+          } else if let GameStatus::New = self.state.get_status() {
+            self.state.set_status(GameStatus::Playing);
+          }
+
+        }
+
+      },
+
+      // Otherwise do nothing and let the function return the unchanged state
+      _ => (),
+    }
+
+    self.state
+
+  }
+
+  /// Undo the last move.
+  pub fn undo_last_move(&mut self) {
+
+    // IMPLEMENT
 
   }
   
+}
+
+impl GameState {
+
+  // Base constructor.
+  pub fn new() -> Self {
+    GameState {
+      status: GameStatus::New,
+      move_count: 0,
+      score: 0,
+      victory: false,
+    }
+  }
+
+  // Getters.
+  pub fn get_status(&self) -> GameStatus { self.status }
+  pub fn get_move_count(&self) -> u32 { self.move_count }
+  pub fn get_score(&self) -> u32 { self.score }
+  pub fn get_victory(&self) -> bool { self.victory }
+
+  // Setters.
+  fn set_status(&mut self, value: GameStatus) { self.status = value; }
+  fn set_victory(&mut self, value: bool) { self.victory = value; }
+
+  // "Increasers"
+  fn inc_move_count(&mut self) { self.move_count += 1; }
+  fn inc_score(&mut self, delta: u32) { self.score += delta; }
+
 }
 
 
@@ -133,6 +209,7 @@ pub fn is_victory(grid: &Grid<EncodedGrid>) -> bool {
   false
 }
 
+/// Checks if the given grid is a terminating state
 pub fn is_game_over(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> bool {
 
   // Progressive optimization, if at least one entry is zero you can always make a move
@@ -148,7 +225,8 @@ pub fn is_game_over(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntry
   true
 }
 
-fn is_effective_move(move_result: &MoveResult) -> bool {
+/// Checks if the result of a move describes a change in the state of the grid
+pub fn is_effective_move(move_result: &MoveStackingResult) -> bool {
 
   let dest_grid = move_result.get_destination_grid();
 
@@ -173,9 +251,12 @@ mod tests {
 
   use super::*;
 
+
+  // Test is_victory()
+
   #[test]
   pub fn test_is_victory_false() {
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 0, 0, 2],
       [0, 0, 2, 8],
       [0, 0, 4, 8],
@@ -187,7 +268,7 @@ mod tests {
 
   #[test]
   pub fn test_is_victory_true() {
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 0, 0, 2],
       [0, 0, 2, 8],
       [0, 0, 4, 8],
@@ -198,8 +279,23 @@ mod tests {
   }
 
   #[test]
+  pub fn test_is_victory_on_full_true() {
+    let grid = Grid::from_decoded(&[
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+      [2, 4, 2, 8],
+      [4, 2, 2048, 2],
+    ]);
+
+    assert_eq!(is_victory(&grid), true);
+  }
+
+
+  // Test is_effective_move()
+
+  #[test]
   pub fn test_is_effective_move_false() {
-    let move_result = MoveResult::new(
+    let move_result = MoveStackingResult::new(
       &Grid::new(&[0; GRID_SIDE]),
       &Grid::new(&[0; GRID_SIDE]),
       0,
@@ -211,7 +307,7 @@ mod tests {
 
   #[test]
   pub fn test_is_effective_move_true() {
-    let move_result = MoveResult::new(
+    let move_result = MoveStackingResult::new(
       &Grid::new(&[0; GRID_SIDE]),
       &Grid::new(&[0; GRID_SIDE]),
       0,
@@ -226,9 +322,12 @@ mod tests {
     assert_eq!(is_effective_move(&move_result), true);
   }
 
+
+  // Test is_game_over()
+
   #[test]
   pub fn test_is_game_over_on_sparse_grid() {
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 4, 4, 8],
       [2, 4, 8, 8],
       [2, 0, 0, 8],
@@ -240,7 +339,7 @@ mod tests {
 
   #[test]
   pub fn test_is_game_over_on_full_non_game_over() {
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [2, 4, 2, 2],
       [4, 2, 4, 2],
       [2, 4, 2, 4],
@@ -252,7 +351,7 @@ mod tests {
 
   #[test]
   pub fn test_is_game_over_on_full_game_over() {
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [2, 4, 2, 4],
       [4, 2, 4, 2],
       [2, 4, 2, 4],
@@ -260,6 +359,79 @@ mod tests {
     ]);
 
     assert_eq!(is_game_over(&grid, &moves::make_precomputed_hashmap()), true);
+  }
+
+  #[test]
+  pub fn test_is_game_over_on_full_game_over2() {
+    let grid = Grid::from_decoded(&[
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+      [2, 4, 2, 8],
+      [4, 2, 2048, 2],
+    ]);
+
+    assert_eq!(is_game_over(&grid, &make_precomputed_hashmap()), true);
+  }
+
+
+  // Test Game::process_move()
+
+  #[test]
+  pub fn test_game_process_move_ordinary_state() {
+    let mut game = Game {
+      grid: Grid::from_decoded(&[
+        [2, 4, 2, 2],
+        [4, 2, 4, 2],
+        [2, 4, 2, 4],
+        [4, 2, 4, 2],
+      ]),
+      state: GameState {
+        status: GameStatus::New,
+        move_count: 5,
+        score: 5000,
+        victory: false,
+      },
+      grid_history: VecDeque::with_capacity(HISTORY_LENGTH),
+      precomputed_moves: make_precomputed_hashmap(),
+    };
+
+    game.process_move(PlayerMove::Left);
+
+    assert_eq!(game.get_state().get_status(), GameStatus::Playing);
+    assert_eq!(game.get_state().get_move_count(), 6);
+    assert_eq!(game.get_state().get_score(), 5004);
+    assert_eq!(game.get_state().get_victory(), false);
+    assert_eq!(game.grid_history.len(), 1);
+
+  }
+
+  #[test]
+  pub fn test_game_process_move_terminating_victory() {
+    let mut game = Game {
+      grid: Grid::from_decoded(&[
+        [2, 4, 2, 4],
+        [4, 2, 4, 2],
+        [2, 4, 2, 8],
+        [4, 2, 1024, 1024],
+      ]),
+      state: GameState {
+        status: GameStatus::Playing,
+        move_count: 5,
+        score: 10000,
+        victory: false,
+      },
+      grid_history: VecDeque::with_capacity(HISTORY_LENGTH),
+      precomputed_moves: make_precomputed_hashmap(),
+    };
+
+    game.process_move(PlayerMove::Left);
+
+    assert_eq!(game.get_state().get_status(), GameStatus::Over);
+    assert_eq!(game.get_state().get_move_count(), 6);
+    assert_eq!(game.get_state().get_score(), 12048);
+    assert_eq!(game.get_state().get_victory(), true);
+    assert_eq!(game.grid_history.len(), 1);
+
   }
 
 }

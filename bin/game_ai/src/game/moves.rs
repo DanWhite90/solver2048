@@ -15,6 +15,15 @@ use super::*;
 // Types and Definitions
 //------------------------------------------------
 
+/// Player move `enum`.
+#[derive(Copy, Clone)]
+pub enum PlayerMove {
+  Up,
+  Left,
+  Right,
+  Down,
+}
+
 /// Struct used as an iterable object to provide all the allowed values (powers of 2) for a tile from 0 to `LARGEST_TILE`.
 struct AdmissibleTileValue {
   value: EntryType,
@@ -32,7 +41,7 @@ pub struct LineStackingResult {
 
 /// Contains the information regarding the encoded processing of the move for the entire grid.
 /// All the values are encoded where possible.
-pub struct MoveResult {
+pub struct MoveStackingResult {
   prev_grid: Grid<EncodedGrid>,
   new_grid: Grid<EncodedGrid>,
   delta_score: u32,
@@ -83,10 +92,10 @@ impl LineStackingResult {
   }
 }
 
-impl MoveResult {
+impl MoveStackingResult {
 
   pub fn new(prev: &Grid<EncodedGrid>, new: &Grid<EncodedGrid>, delta: u32, dest: &Grid<DestinationsGrid>) -> Self {
-    MoveResult {
+    MoveStackingResult {
       prev_grid: *prev,
       new_grid: *new,
       delta_score: delta,
@@ -95,10 +104,10 @@ impl MoveResult {
   }
 
   // Getters
-  pub fn get_prev_grid(&self) -> Grid<EncodedGrid> { self.prev_grid }
-  pub fn get_new_grid(&self) -> Grid<EncodedGrid> { self.new_grid }
+  pub fn get_prev_grid(&self) -> &Grid<EncodedGrid> { &self.prev_grid }
+  pub fn get_new_grid(&self) -> &Grid<EncodedGrid> { &self.new_grid }
   pub fn get_delta_score(&self) -> u32 { self.delta_score }
-  pub fn get_destination_grid(&self) -> Grid<DestinationsGrid> { self.destination_grid }
+  pub fn get_destination_grid(&self) -> &Grid<DestinationsGrid> { &self.destination_grid }
 
 }
 
@@ -202,7 +211,7 @@ pub fn make_precomputed_hashmap() -> HashMap<EncodedEntryType, LineStackingResul
 }
 
 /// Process the stacking of the grid based on the player move
-pub fn process_grid_stacking(player_move: PlayerMove, grid: Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveResult {
+pub fn process_grid_stacking(player_move: PlayerMove, grid: Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveStackingResult {
   let mut new_grid = grid;
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid = Grid::<DestinationsGrid>::new(&[[0; GRID_SIDE]; GRID_SIDE]);
@@ -252,7 +261,7 @@ pub fn process_grid_stacking(player_move: PlayerMove, grid: Grid<EncodedGrid>, m
     },
   };
 
-  MoveResult::new(&grid, &new_grid, tot_delta_score, &dest_grid)
+  MoveStackingResult::new(&grid, &new_grid, tot_delta_score, &dest_grid)
 }
 
 
@@ -365,14 +374,14 @@ mod tests {
   pub fn test_up_move() {
     let moves_table = make_precomputed_hashmap();
 
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid = Grid::new_from_decoded(&[
+    let new_grid = Grid::from_decoded(&[
       [2, 4, 4, 4],
       [8, 0, 8, 0],
       [0, 0, 0, 0],
@@ -390,21 +399,21 @@ mod tests {
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 20);
-    assert_eq!(result.get_destination_grid(), dest_grid);
+    assert_eq!(*result.get_destination_grid(), dest_grid);
   }
 
   #[test]
   pub fn test_left_move() {
     let moves_table = make_precomputed_hashmap();
 
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid = Grid::new_from_decoded(&[
+    let new_grid = Grid::from_decoded(&[
       [4, 0, 0, 0],
       [4, 4, 0, 0],
       [4, 0, 0, 0],
@@ -418,25 +427,25 @@ mod tests {
       [0, 0, -1, -1],
     ]);
 
-    let result: MoveResult = process_grid_stacking(PlayerMove::Left, grid, &moves_table);
+    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Left, grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 12);
-    assert_eq!(result.get_destination_grid(), dest_grid);
+    assert_eq!(*result.get_destination_grid(), dest_grid);
   }
 
   #[test]
   pub fn test_right_move() {
     let moves_table = make_precomputed_hashmap();
 
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid = Grid::new_from_decoded(&[
+    let new_grid = Grid::from_decoded(&[
       [0, 0, 0, 4],
       [0, 0, 4, 4],
       [0, 0, 0, 4],
@@ -450,25 +459,25 @@ mod tests {
       [1, 0, 0, 0],
     ]);
 
-    let result: MoveResult = process_grid_stacking(PlayerMove::Right, grid, &moves_table);
+    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Right, grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 12);
-    assert_eq!(result.get_destination_grid(), dest_grid);
+    assert_eq!(*result.get_destination_grid(), dest_grid);
   }
 
   #[test]
   pub fn test_down_move() {
     let moves_table = make_precomputed_hashmap();
 
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 2, 2, 0],
       [2, 2, 2, 2],
       [0, 0, 4, 0],
       [8, 0, 4, 2],
     ]);
 
-    let new_grid = Grid::new_from_decoded(&[
+    let new_grid = Grid::from_decoded(&[
       [0, 0, 0, 0],
       [0, 0, 0, 0],
       [2, 0, 4, 0],
@@ -482,10 +491,10 @@ mod tests {
       [0, 0, 0, 0],
     ]);
 
-    let result: MoveResult = process_grid_stacking(PlayerMove::Down, grid, &moves_table);
+    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Down, grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 20);
-    assert_eq!(result.get_destination_grid(), dest_grid);
+    assert_eq!(*result.get_destination_grid(), dest_grid);
   }
 }

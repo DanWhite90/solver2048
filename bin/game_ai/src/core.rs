@@ -16,6 +16,7 @@ pub const LARGEST_TILE: EntryType = 65536;
 pub const ENCODING_BITS: usize = 5;
 pub const PROB_TILE2: f64 = 0.9;
 pub const VICTORY_THRESHOLD: EntryType = 2048;
+pub const HISTORY_LENGTH: usize = 20;
 
 
 // TYPES
@@ -29,18 +30,6 @@ pub type Array2D<T> = [Array1D<T>; GRID_SIDE];
 
 pub type EncodedGrid = Array1D<EncodedEntryType>;
 pub type DestinationsGrid = Array2D<DestEntryType>;
-
-
-// DATA STRUCTURES
-
-/// Player move `enum`.
-#[derive(Copy, Clone)]
-pub enum PlayerMove {
-  Up,
-  Left,
-  Right,
-  Down,
-}
 
 
 //------------------------------------------------

@@ -49,7 +49,7 @@ impl<T: GridState> Grid<T> {
 impl Grid<EncodedGrid> {
 
   /// Constructor from decoded to be encoded.
-  pub fn new_from_decoded(grid: &Array2D<EntryType>) -> Self {
+  pub fn from_decoded(grid: &Array2D<EntryType>) -> Self {
     Self {
       state: encoding::encode_grid(grid),
     }
@@ -254,7 +254,7 @@ impl Display for Grid<EncodedGrid> {
 
     write!(f, "GameGrid::state = [\n")?;
     for i in 0..GRID_SIDE {
-      write!(f, "  {:?}\n", encoding::decode_line(self.state[i]))?;
+      write!(f, "  {:?},\n", encoding::decode_line(self.state[i]))?;
     }
     write!(f, "]\n")?;
 
@@ -268,7 +268,7 @@ impl Display for Grid<DestinationsGrid> {
 
     write!(f, "GameGrid::state = [\n")?;
     for i in 0..GRID_SIDE {
-      write!(f, "  {:?}\n", self.state[i])?;
+      write!(f, "  {:?},\n", self.state[i])?;
     }
     write!(f, "]\n")?;
 
@@ -354,7 +354,7 @@ mod tests {
 
   #[test]
   pub fn test_gamegrid_get_zeros() {
-    let grid = Grid::new_from_decoded(&[
+    let grid = Grid::from_decoded(&[
       [0, 0, 0, 2],
       [0, 0, 0, 0],
       [2, 2, 2, 2],
@@ -365,15 +365,27 @@ mod tests {
   }
 
   #[test]
+  pub fn test_gamegrid_get_zeros_full_grid() {
+    let grid = Grid::from_decoded(&[
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+      [2, 4, 2, 8],
+      [4, 2, 2048, 2],
+    ]);
+
+    assert_eq!(grid.get_zeros(), 0);
+  }
+
+  #[test]
   pub fn test_gamegrid_transpose() {
-    let mut grid = Grid::new_from_decoded(&[
+    let mut grid = Grid::from_decoded(&[
       [0, 2, 4, 8],
       [4, 4, 4, 4],
       [8, 8, 4, 4],
       [8, 4, 2, 2],
     ]);
 
-    let res = Grid::new_from_decoded(&[
+    let res = Grid::from_decoded(&[
       [0, 4, 8, 8],
       [2, 4, 8, 4],
       [4, 4, 4, 2],
@@ -385,14 +397,14 @@ mod tests {
 
   #[test]
   pub fn test_gamegrid_reverse() {
-    let mut grid = Grid::new_from_decoded(&[
+    let mut grid = Grid::from_decoded(&[
       [0, 2, 4, 8],
       [4, 4, 4, 4],
       [8, 8, 4, 4],
       [8, 4, 2, 2],
     ]);
 
-    let res = Grid::new_from_decoded(&[
+    let res = Grid::from_decoded(&[
       [8, 4, 2, 0],
       [4, 4, 4, 4],
       [4, 4, 8, 8],
@@ -404,14 +416,14 @@ mod tests {
   
   #[test]
   pub fn test_gamegrid_add_tile_to_position() {
-    let mut grid = Grid::new_from_decoded(&[
+    let mut grid = Grid::from_decoded(&[
       [2, 4, 4, 0],
       [4, 2, 0, 0],
       [8, 8, 2, 2],
       [0, 0, 4, 2],
     ]);
     
-    let res = Grid::new_from_decoded(&[
+    let res = Grid::from_decoded(&[
       [2, 4, 4, 0],
       [4, 2, 0, 2],
       [8, 8, 2, 2],
