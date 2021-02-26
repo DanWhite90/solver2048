@@ -28,17 +28,24 @@ pub enum GameStatus {
 pub struct Game {
   grid: Grid<EncodedGrid>,
   state: GameState,
-  grid_history: VecDeque<Grid<EncodedGrid>>,
+  history: VecDeque<HistoryItem>,
   precomputed_moves: HashMap<EncodedEntryType, LineStackingResult>,
 }
 
 /// The object containing the state of the game. Returned at each move processed.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct GameState {
   status: GameStatus,
   move_count: u32,
   score: u32,
   victory: bool,
+}
+
+/// A struct containing the information necessary to restore the game to a given state
+#[derive(Copy, Clone, PartialEq, Debug)]
+struct HistoryItem {
+  grid: Grid<EncodedGrid>,
+  state: GameState,
 }
 
 
@@ -55,7 +62,7 @@ impl Game {
     Game {
       grid: *add_random_tile(&mut Grid::new(&[0; GRID_SIDE])),
       state: GameState::new(),
-      grid_history: VecDeque::with_capacity(HISTORY_LENGTH),
+      history: VecDeque::with_capacity(HISTORY_LENGTH),
       precomputed_moves: moves::make_precomputed_hashmap(),
     }
   }
@@ -64,7 +71,7 @@ impl Game {
   pub fn reset(&mut self) {
     self.grid = *add_random_tile(&mut Grid::new(&[0; GRID_SIDE]));
     self.state = GameState::new();
-    self.grid_history = VecDeque::with_capacity(HISTORY_LENGTH);
+    self.history = VecDeque::with_capacity(HISTORY_LENGTH);
   }
 
   // Getters
@@ -86,10 +93,14 @@ impl Game {
         if is_effective_move(&move_result) {
 
           // Append old grid to history 
-          if self.grid_history.len() >= HISTORY_LENGTH {
-            self.grid_history.pop_back();
+          if self.history.len() >= HISTORY_LENGTH {
+            self.history.pop_back();
           }
-          self.grid_history.push_front(self.grid);
+
+          self.history.push_front(HistoryItem {
+            grid: self.grid,
+            state: self.state,
+          });
 
           // Update grid
           self.grid = *move_result.get_new_grid();
@@ -132,7 +143,14 @@ impl Game {
   /// Undo the last move.
   pub fn undo_last_move(&mut self) {
 
-    // IMPLEMENT
+    if self.history.len() > 0 {
+
+      let restored = self.history.pop_front().unwrap();
+
+      self.grid = restored.grid;
+      self.state = restored.state;
+
+    }
 
   }
   
@@ -203,7 +221,7 @@ pub fn is_victory(grid: &Grid<EncodedGrid>) -> bool {
     }
     
     // shift to new column
-    bit_mask <<= ENCODING_BITS * j;
+    bit_mask <<= ENCODING_BITS;
   }
 
   false
@@ -374,6 +392,38 @@ mod tests {
   }
 
 
+  // Test Game::reset()
+  
+  #[test]
+  pub fn test_game_reset() {
+    let mut game = Game {
+      grid: Grid::from_decoded(&[
+        [2, 4, 2, 2],
+        [4, 2, 4, 2],
+        [2, 4, 2, 4],
+        [4, 2, 0, 0],
+      ]),
+      state: GameState {
+        status: GameStatus::Playing,
+        move_count: 5,
+        score: 5000,
+        victory: true,
+      },
+      history: VecDeque::with_capacity(HISTORY_LENGTH),
+      precomputed_moves: make_precomputed_hashmap(),
+    };
+
+    game.reset();
+
+    assert_eq!(game.get_state().get_status(), GameStatus::New);
+    assert_eq!(game.get_state().get_move_count(), 0);
+    assert_eq!(game.get_state().get_score(), 0);
+    assert_eq!(game.get_state().get_victory(), false);
+    assert_eq!(game.history.len(), 0);
+
+  }
+
+
   // Test Game::process_move()
 
   #[test]
@@ -391,7 +441,7 @@ mod tests {
         score: 5000,
         victory: false,
       },
-      grid_history: VecDeque::with_capacity(HISTORY_LENGTH),
+      history: VecDeque::with_capacity(HISTORY_LENGTH),
       precomputed_moves: make_precomputed_hashmap(),
     };
 
@@ -401,7 +451,7 @@ mod tests {
     assert_eq!(game.get_state().get_move_count(), 6);
     assert_eq!(game.get_state().get_score(), 5004);
     assert_eq!(game.get_state().get_victory(), false);
-    assert_eq!(game.grid_history.len(), 1);
+    assert_eq!(game.history.len(), 1);
 
   }
 
@@ -420,7 +470,7 @@ mod tests {
         score: 10000,
         victory: false,
       },
-      grid_history: VecDeque::with_capacity(HISTORY_LENGTH),
+      history: VecDeque::with_capacity(HISTORY_LENGTH),
       precomputed_moves: make_precomputed_hashmap(),
     };
 
@@ -430,7 +480,93 @@ mod tests {
     assert_eq!(game.get_state().get_move_count(), 6);
     assert_eq!(game.get_state().get_score(), 12048);
     assert_eq!(game.get_state().get_victory(), true);
-    assert_eq!(game.grid_history.len(), 1);
+    assert_eq!(game.history.len(), 1);
+
+  }
+
+  #[test]
+  pub fn test_game_process_move_history_overflow() {
+    let mut game = Game::new();
+
+    use PlayerMove::{Up, Left, Right, Down};
+    let player_move = [Up, Left, Right, Down];
+    let mut count = 0;
+
+    // Fill history
+    while game.history.len() < HISTORY_LENGTH {
+      game.process_move(player_move[count % 4]);
+      count += 1;
+    }
+
+    assert_eq!(game.history.len(), HISTORY_LENGTH);
+
+    // Add some extra moves
+    for _ in 0..10 {
+      game.process_move(player_move[count % 4]);
+      count += 1;
+    }
+
+    assert_eq!(game.history.len(), HISTORY_LENGTH);
+
+  }
+
+
+  // Test Game::undo_last_move()
+
+  #[test]
+  pub fn test_undo_last_move_empty() {
+    let mut game = Game::new();
+
+    let game_state = HistoryItem {
+      grid: game.grid,
+      state: game.state,
+    };
+    
+    assert_eq!(game.history.len(), 0);
+
+    game.undo_last_move();
+
+    assert_eq!(game_state, HistoryItem {
+      grid: game.grid,
+      state: game.state,
+    });
+    assert_eq!(game.history.len(), 0);
+
+  }
+
+  #[test]
+  pub fn test_undo_last_move_full() {
+    let mut game = Game::new();
+
+    use PlayerMove::{Up, Left, Right, Down};
+    let player_move = [Up, Left, Right, Down];
+    let mut count = 0;
+
+    // Fill history
+    while game.history.len() < HISTORY_LENGTH {
+      game.process_move(player_move[count % 4]);
+      count += 1;
+    }
+
+    let game_state = HistoryItem {
+      grid: game.grid,
+      state: game.state,
+    };
+    let move_count = game.state.get_move_count();
+
+    // Add one extra move, whichever is feasible
+    for i in 0..4 {
+      game.process_move(player_move[i]);
+      if game.state.get_move_count() > move_count { break; }
+    }
+
+    game.undo_last_move();
+
+    assert_eq!(game_state, HistoryItem {
+      grid: game.grid,
+      state: game.state,
+    });
+    assert_eq!(game.history.len(), HISTORY_LENGTH - 1);
 
   }
 
