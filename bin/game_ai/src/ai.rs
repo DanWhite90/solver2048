@@ -17,6 +17,17 @@ macro_rules! TREE_SIZE {
   };
 }
 
+macro_rules! MOVE_CHILDREN_ARR_LENGTH {
+  ( $n: expr ) => {
+    (($n as u32).pow(2) as usize) * 2
+  };
+}
+
+macro_rules! TOT_MONOTONICITY_DIVISOR {
+  ( $n: expr ) => {
+    $n * ($n - 1) * 2
+  };
+}
 
 
 //------------------------------------------------
@@ -37,6 +48,17 @@ mod tests {
   #[test]
   pub fn test_tree_size_macro() {
     assert_eq!(TREE_SIZE!(4, 6), 16383);
+  }
+
+  #[test]
+  pub fn test_move_children_arr_length_macro() {
+    assert_eq!(MOVE_CHILDREN_ARR_LENGTH!(4), 32);
+  }
+
+
+  #[test]
+  pub fn test_tot_monotonicity_divisor_macro() {
+    assert_eq!(TOT_MONOTONICITY_DIVISOR!(4), 24);
   }
 
 }

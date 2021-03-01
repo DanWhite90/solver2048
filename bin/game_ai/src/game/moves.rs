@@ -16,12 +16,12 @@ use super::*;
 //------------------------------------------------
 
 /// Player move `enum`.
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum PlayerMove {
-  Up,
-  Left,
-  Right,
-  Down,
+  Up = 0,
+  Left = 1,
+  Right = 2,
+  Down = 3,
 }
 
 /// Struct used as an iterable object to provide all the allowed values (powers of 2) for a tile from 0 to `LARGEST_TILE`.
