@@ -2,13 +2,12 @@
 //! 
 //! Contains the basic definitions and implementations for the objects used by the AI engine.
 
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use std::collections::HashMap;
-use std::cell::RefCell;
 use std::cmp;
 
 use crate::game::*;
-use crate::game::moves::PlayerMove;
+use crate::game::moves::{PlayerMove, LineStackingResult};
 use crate::encoding;
 
 
@@ -37,8 +36,8 @@ const HOMOGENEITY_DEGREE: f64 = 8.; // Regulates the growth and concavity/convex
 /// Contains all the data required by the AI that needs to be stored in a node in the forecast tree.
 #[derive(Copy, Clone)]
 pub struct AINodeData {
-  grid: Grid<EncodedGrid>,
-  delta_score: u32,
+  utility: f64,
+  originating_move: Option<PlayerMove>,
 }
 
 /// Contains all the information needed in the AI forecast tree to compute the optimal move.
@@ -46,15 +45,12 @@ pub struct AINodeData {
 #[derive(Clone)]
 pub struct AINode {
   data: AINodeData,
-  children: HashMap<usize, Rc<RefCell<AINode>>>,
-  parent: Weak<AINode>,
-  next_sibling: Weak<AINode>,
+  children: Vec<Rc<AINode>>,
 }
 
 /// The forecast tree to be processed in order to compute the optimal move.
 pub struct AITree {
-  root: Rc<RefCell<AINode>>,
-  first_leaf_per_move: HashMap<PlayerMove, Weak<AINode>>,
+  root: Rc<AINode>,
 }
 
 
@@ -67,16 +63,16 @@ pub struct AITree {
 impl AINodeData {
 
   /// Constructor.
-  pub fn new(grid: &Grid<EncodedGrid>, delta_score: u32) -> Self {
+  pub fn new(utility: f64, originating_move: Option<PlayerMove>) -> Self {
     AINodeData {
-      grid: *grid,
-      delta_score,
+      utility,
+      originating_move,
     }
   }
 
   // Getters
-  pub fn get_grid(&self) -> &Grid<EncodedGrid> { &self.grid }
-  pub fn get_delta_score(&self) -> u32 { self.delta_score }
+  pub fn get_utility(&self) -> f64 { self.utility }
+  pub fn get_originating_move(&self) -> Option<PlayerMove> { self.originating_move }
 
 }
 
@@ -86,62 +82,20 @@ impl AINode {
   pub fn new(data: &AINodeData) -> Self {
     AINode {
       data: *data,
-      children: HashMap::new(),
-      parent: Weak::new(),
-      next_sibling: Weak::new(),
+      children: vec![],
     }
   }
   
   // Getters
   pub fn get_data(&self) -> &AINodeData { &self.data }
-
-  pub fn get_child(&self, player_move: PlayerMove, tile: EntryType, row: usize, col: usize) -> Option<Weak<RefCell<AINode>>> {
-    if let Some(child) = self.children.get(&encode_key(player_move, tile, row, col)) {
-      Some(Rc::downgrade(&child))
-    } else {
-      None
-    }
-  }
-
-  pub fn get_parent(&self) -> Weak<AINode> { Weak::clone(&self.parent) }
-  pub fn get_next_sibling(&self) -> Weak<AINode> { Weak::clone(&self.next_sibling) }
-
-  // Setters
-  pub fn set_parent(&mut self, node: &Rc<AINode>) { self.parent = Rc::downgrade(node) }
-  pub fn set_next_sibling(&mut self, node: &Rc<AINode>) { self.next_sibling = Rc::downgrade(node) }
+  pub fn get_children(&self) -> &Vec<Rc<AINode>> { &self.children }
 
   /// Adds a new child to the node, already existing nodes are overwritten.
-  pub fn add_child(&mut self, player_move: PlayerMove, tile: EntryType, row: usize, col: usize, node: &Rc<RefCell<AINode>>) { 
-    self.children.insert(encode_key(player_move, tile, row, col), Rc::clone(node));
-  }
-
-  /// Removes a child and returns its value if present, otherwise `None`.
-  pub fn remove_child(&mut self, player_move: PlayerMove, tile: EntryType, row: usize, col: usize) -> Option<Rc<RefCell<AINode>>> {
-    self.children.remove(&encode_key(player_move, tile, row, col))
+  pub fn add_child(&mut self, child: Rc<AINode>) { 
+    self.children.push(child);
   }
 
 }
-
-impl AITree {
-
-  /// Initialize empty tree
-  pub fn new(root_data: &AINodeData) -> Self {
-    AITree {
-      root: Rc::new(RefCell::new(AINode::new(root_data))),
-      first_leaf_per_move: HashMap::with_capacity(AVAILABLE_MOVES_COUNT),
-    }
-  }
-
-  /// This method sets the new root as one of it's children and discards all the other children. 
-  /// Returns a `std::rc::Weak` pointer to the new root or `None` if there's no such child.
-  fn make_child_root(&mut self, player_move: PlayerMove, tile: EntryType, row: usize, col: usize) {}
-
-  /// This method expands the tree of moves from the leaves down to a required depth
-  fn expand(&mut self, depth: usize) {}
-
-}
-
-// TODO: possibly add indexing for path
 
 
 //------------------------------------------------
@@ -150,6 +104,7 @@ impl AITree {
 
 /// generates a key for the children encoded as |row|col|tile|move| as with a number of bits of ...|11|11|1|11|.
 /// No checks are made on the parameters as it's internal code.
+#[allow(dead_code)]
 fn encode_key(player_move: PlayerMove, tile: EntryType, row: usize, col: usize) -> usize {
 
   // encode tile as 2 -> 0, 4 -> 1, this encodes the tile and puts it in the third bit
@@ -169,6 +124,7 @@ fn encode_key(player_move: PlayerMove, tile: EntryType, row: usize, col: usize) 
 
 /// Decodes the children key into (move, tile, row, col).
 /// No checks are made on the parameters as it's internal code.
+#[allow(dead_code)]
 fn decode_key(key: usize) -> (PlayerMove, EntryType, usize, usize) {
 
   let mut tile: EntryType = 2;
@@ -230,27 +186,37 @@ fn heuristics_scores(grid: &Grid<EncodedGrid>) -> (f64, f64, f64, f64) {
     0.
   };
 
-  ((cmp::max(inc_h, dec_h) + cmp::max(inc_v, dec_v) - TOT_MONOTONICITY_DIVISOR / 2) as f64 / TOT_MONOTONICITY_DIVISOR as f64 * 2., 
+  (
+    (cmp::max(inc_h, dec_h) + cmp::max(inc_v, dec_v) - TOT_MONOTONICITY_DIVISOR / 2) as f64 / TOT_MONOTONICITY_DIVISOR as f64 * 2., 
     empty_tiles as f64 / (GRID_SIDE * GRID_SIDE) as f64, 
     1. - clutter_penalty * GRID_NUM_GAP_SENSITIVITY, 
     log_max as f64 / LOG2_VICTORY_THRESHOLD as f64,
   )
 }
 
-/// Computes the utility of a set of heuristics scores
-pub fn utility(grid: &Grid<EncodedGrid>) -> f64 {
+/// Computes the utility of a grid from the set of heuristics scores
+pub fn utility(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> f64 {
   let scores = heuristics_scores(grid);
 
+  // If we are not in a winning state
   if scores.3 < 1. {
-    // Cobb-Douglas utility
+
+    // If it's game over value as -Inf
+    if scores.1 == 0. && engine::is_game_over(grid, moves_table) {
+      return -f64::INFINITY;
+    }
+
+    // Otherwise compute Cobb-Douglas utility
     scores.0.powf(HOMOGENEITY_DEGREE * ALPHA)
     * scores.1.powf(HOMOGENEITY_DEGREE * BETA)
     * scores.2.powf(HOMOGENEITY_DEGREE * GAMMA)
     * scores.3.powf(HOMOGENEITY_DEGREE * (1. - ALPHA - BETA - GAMMA))
+
+  // Otherwise we won value Inf
   } else {
-    // Winning tile is present so return infinity
     f64::INFINITY
   }
+
 }
 
 //------------------------------------------------
