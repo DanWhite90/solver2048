@@ -3,7 +3,7 @@
 //! This module allows for encoding and decoding a row state into and from a u32 number.
 //! No validation of the inputs is executed for maximum performance.
 
-use crate::core::*;
+use crate::game::core::*;
 
 
 //------------------------------------------------

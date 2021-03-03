@@ -6,9 +6,9 @@ use std::rc::Rc;
 use std::collections::HashMap;
 use std::cmp;
 
-use crate::game::*;
-use crate::game::moves::{PlayerMove, LineStackingResult};
 use crate::encoding;
+use crate::game::*;
+use moves::{PlayerMove, LineStackingResult};
 
 
 //------------------------------------------------

@@ -5,7 +5,7 @@
 
 use std::collections::{VecDeque, HashMap};
 
-use crate::core::*;
+use crate::game::core::*;
 
 use super::*;
 use moves::*;
@@ -87,7 +87,7 @@ impl Game {
       // Process move only if not in a terminating state of the game
       GameStatus::New | GameStatus::Playing => {
 
-        let move_result = moves::process_grid_stacking(player_move, self.grid, &self.precomputed_moves);
+        let move_result = moves::process_grid_stacking(player_move, &self.grid, &self.precomputed_moves);
 
         // Process the move only if it produced effects, otherwise it's null and ignored
         if is_effective_move(&move_result) {
@@ -234,10 +234,10 @@ pub fn is_game_over(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntry
   if grid.get_zeros() > 0 { return false; }
 
   // When the grid is full, if at least one move is possible then it's not game over
-  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Up, *grid, moves_table)) { return false; }
-  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Left, *grid, moves_table)) { return false; }
-  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Right, *grid, moves_table)) { return false; }
-  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Down, *grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Up, grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Left, grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Right, grid, moves_table)) { return false; }
+  if is_effective_move(&moves::process_grid_stacking(PlayerMove::Down, grid, moves_table)) { return false; }
 
   // No move is possible, game over
   true

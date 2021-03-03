@@ -5,7 +5,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
-use super::core::*;
+use crate::ai::core::*;
 use crate::game::*;
 use moves::{PlayerMove, LineStackingResult};
 
@@ -22,7 +22,7 @@ pub enum AIState {
 }
 
 pub struct AIEngine {
-  moves_tree_root: Rc<AINode>,
+  current_grid: Grid<EncodedGrid>,
   state: AIState,
   optimal_moves_stream: VecDeque<PlayerMove>,
   precomputed_moves: HashMap<EncodedEntryType, LineStackingResult>,
@@ -35,14 +35,15 @@ pub struct AIEngine {
 
 // Inherent
 
-impl AIEngine{
+impl AIEngine {
 
+  /// Constructor.
   pub fn new(grid: &Grid<EncodedGrid>) -> Self {
 
     let precomputed_moves = moves::make_precomputed_hashmap();
 
     AIEngine {
-      moves_tree_root: Rc::new(AINode::new(&AINodeData::new(utility(grid, &precomputed_moves), None))),
+      current_grid: *grid,
       state: AIState::Inactive,
       optimal_moves_stream: VecDeque::with_capacity(MOVES_QUEUE_CAPACITY),
       precomputed_moves,
@@ -50,12 +51,27 @@ impl AIEngine{
     
   }
 
+  /// Gets the next optimal move enqueued  based on the current state of the grid
+  pub fn get_optimal_move(&self) -> Option<PlayerMove> {
+    if self.optimal_moves_stream.len() > 0 {
+      Some(*self.optimal_moves_stream.front().unwrap())
+    } else {
+      None
+    }
+  }
+
+
 }
 
 
 //------------------------------------------------
 // Functions
 //------------------------------------------------
+
+fn alpha_beta(grid: &Grid<EncodedGrid>) {
+
+}
+
 
 
 //------------------------------------------------

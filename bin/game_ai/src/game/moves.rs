@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use crate::core::*;
+use crate::game::core::*;
 use crate::encoding;
 
 use super::*;
@@ -211,8 +211,8 @@ pub fn make_precomputed_hashmap() -> HashMap<EncodedEntryType, LineStackingResul
 }
 
 /// Process the stacking of the grid based on the player move
-pub fn process_grid_stacking(player_move: PlayerMove, grid: Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveStackingResult {
-  let mut new_grid = grid;
+pub fn process_grid_stacking(player_move: PlayerMove, grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> MoveStackingResult {
+  let mut new_grid = *grid;
   let mut tot_delta_score: u32 = 0;
   let mut dest_grid = Grid::<DestinationsGrid>::new(&[[0; GRID_SIDE]; GRID_SIDE]);
 
@@ -395,7 +395,7 @@ mod tests {
       [-2, 0, -2, -3],
     ]);
 
-    let result = process_grid_stacking(PlayerMove::Up, grid, &moves_table);
+    let result = process_grid_stacking(PlayerMove::Up, &grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 20);
@@ -427,7 +427,7 @@ mod tests {
       [0, 0, -1, -1],
     ]);
 
-    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Left, grid, &moves_table);
+    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Left, &grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 12);
@@ -459,7 +459,7 @@ mod tests {
       [1, 0, 0, 0],
     ]);
 
-    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Right, grid, &moves_table);
+    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Right, &grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 12);
@@ -491,7 +491,7 @@ mod tests {
       [0, 0, 0, 0],
     ]);
 
-    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Down, grid, &moves_table);
+    let result: MoveStackingResult = process_grid_stacking(PlayerMove::Down, &grid, &moves_table);
 
     assert_eq!(*result.get_new_grid().get_state(), *new_grid.get_state(), "\n{}{}\n", result.get_new_grid(), new_grid);
     assert_eq!(result.get_delta_score(), 20);

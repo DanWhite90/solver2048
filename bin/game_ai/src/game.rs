@@ -3,13 +3,14 @@
 //! This module defines the fundamental grids of the game and their core behaviour.
 //! It is further divided in the `moves` and `engine` submodules.
 
+pub mod core;
 pub mod moves;
 pub mod engine;
 
 use std::{fmt, fmt::Display};
 use std::ops::{Index, IndexMut};
 
-pub use crate::core::*;
+pub use crate::game::core::*;
 use crate::encoding;
 
 
