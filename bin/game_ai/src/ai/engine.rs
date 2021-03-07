@@ -6,8 +6,9 @@ use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
 use crate::ai::core::*;
-use crate::game::*;
-use moves::{PlayerMove, LineStackingResult};
+use crate::game::core::*;
+use crate::game::moves;
+use crate::game::moves::{PlayerMove, LineStackingResult};
 
 
 //------------------------------------------------

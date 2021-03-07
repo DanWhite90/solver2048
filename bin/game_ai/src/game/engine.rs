@@ -215,7 +215,7 @@ pub fn is_victory(grid: &Grid<EncodedGrid>) -> bool {
     for i in 0..GRID_SIDE {
 
       // check if the masked number shifted back to the least significant bit is greater than or equal to the log2 of the victory threshold
-      if (grid.state[i] & bit_mask) >> ENCODING_BITS * j >= (VICTORY_THRESHOLD as f64).log2() as EncodedEntryType {
+      if (grid.get_state()[i] & bit_mask) >> ENCODING_BITS * j >= (VICTORY_THRESHOLD as f64).log2() as EncodedEntryType {
         return true;
       }
     }
