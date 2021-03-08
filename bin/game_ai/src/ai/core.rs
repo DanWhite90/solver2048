@@ -8,28 +8,33 @@ use std::cmp;
 
 use crate::encoding;
 use crate::game::core::*;
-use crate::game::engine;
 use crate::game::moves::{PlayerMove, LineStackingResult};
+use crate::game::engine;
 
 
 //------------------------------------------------
 // Types and Definitions
 //------------------------------------------------
 
+// AI struct and tree parameters
 pub const AVAILABLE_MOVES_COUNT: usize = 4;
 pub const TREE_DEPTH: usize = 6;
-pub const TREE_SIZE: usize = TREE_SIZE!(AVAILABLE_MOVES_COUNT, TREE_DEPTH); // must satisfy: TREE_SIZE >= AVAILABLE_MOVES_COUNT ** (TREE_DEPTH + 1) - 1
-pub const MOVE_CHILDREN_ARR_LENGTH: usize = MOVE_CHILDREN_ARR_LENGTH!(AVAILABLE_MOVES_COUNT);
+pub const TREE_SIZE: usize = AVAILABLE_MOVES_COUNT.pow(TREE_DEPTH as u32 + 1) - 1; // must satisfy: TREE_SIZE >= AVAILABLE_MOVES_COUNT ** (TREE_DEPTH + 1) - 1
+pub const MOVE_CHILDREN_ARR_LENGTH: usize = GRID_SIDE.pow(2) * 2;
+pub const MOVES_QUEUE_CAPACITY: usize = 20;
 
+// Heuristics and utility parameters
 const LOG2_VICTORY_THRESHOLD: usize = 11; // need macro to make it log of VICTORY_THRESHOLD in game core.
-const TOT_MONOTONICITY_DIVISOR: usize = TOT_MONOTONICITY_DIVISOR!(GRID_SIDE);
+const TOT_MONOTONICITY_DIVISOR: usize = GRID_SIDE * (GRID_SIDE - 1) * 2;
 const GRID_NUM_GAP_SENSITIVITY: f64 = 0.8;
-
-// Utility Parameters const
-const ALPHA: f64 = 0.4; // Monotonicity weight
-const BETA: f64 = 0.2; // Emptiness weight
-const GAMMA: f64 = 0.15; // Mergeability weight
+const MONOTONICITY_WEIGHT: f64 = 0.4; // Monotonicity weight
+const EMPTINESS_WEIGHT: f64 = 0.2; // Emptiness weight
+const MERGEABILITY_WEIGHT: f64 = 0.15; // Mergeability weight
 const HOMOGENEITY_DEGREE: f64 = 8.; // Regulates the growth and concavity/convexity of the utility function
+
+// Bayesian inference parameters
+const ALPHA: f64 = 9.;
+const BETA: f64 = 1.;
 
 
 // DATA STRUCTURES
@@ -143,8 +148,8 @@ fn decode_key(key: usize) -> (PlayerMove, EntryType, usize, usize) {
 
 }
 
-/// Computes the scores for each heurisitc used to evaluate the utility function
-/// Returns: (monotonicity, emptiness, mergeability, maximum_tile)
+/// Computes the scores for each heurisitc used to evaluate the utility function.
+/// Returns: (monotonicity, emptiness, mergeability, maximum_tile).
 fn heuristics_scores(grid: &Grid<EncodedGrid>) -> (f64, f64, f64, f64) {
   let (mut inc_h, mut inc_v, mut dec_h, mut dec_v) = (0, 0, 0, 0);
   let mut sequence_completeness = [0; LOG2_VICTORY_THRESHOLD];
@@ -195,7 +200,7 @@ fn heuristics_scores(grid: &Grid<EncodedGrid>) -> (f64, f64, f64, f64) {
   )
 }
 
-/// Computes the utility of a grid from the set of heuristics scores
+/// Computes the utility of a grid from the set of heuristics scores.
 pub fn utility(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> f64 {
   let scores = heuristics_scores(grid);
 
@@ -208,10 +213,10 @@ pub fn utility(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType,
     }
 
     // Otherwise compute Cobb-Douglas utility
-    scores.0.powf(HOMOGENEITY_DEGREE * ALPHA)
-    * scores.1.powf(HOMOGENEITY_DEGREE * BETA)
-    * scores.2.powf(HOMOGENEITY_DEGREE * GAMMA)
-    * scores.3.powf(HOMOGENEITY_DEGREE * (1. - ALPHA - BETA - GAMMA))
+    scores.0.powf(HOMOGENEITY_DEGREE * MONOTONICITY_WEIGHT)
+    * scores.1.powf(HOMOGENEITY_DEGREE * EMPTINESS_WEIGHT)
+    * scores.2.powf(HOMOGENEITY_DEGREE * MERGEABILITY_WEIGHT)
+    * scores.3.powf(HOMOGENEITY_DEGREE * (1. - MONOTONICITY_WEIGHT - EMPTINESS_WEIGHT - MERGEABILITY_WEIGHT))
 
   // Otherwise we won value Inf
   } else {
@@ -219,6 +224,13 @@ pub fn utility(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType,
   }
 
 }
+
+/// This function calculates the posterior probability of a 2-tile assuming a Beta likelihood.
+/// Sums elements in the grid from the encoded version of the `Grid` itself.
+pub fn bayes_beta_update(grid: &Grid<EncodedGrid>, moves_count: usize) -> f64 {
+  (ALPHA + (2 * (moves_count + 1)) as f64 - 0.5 * grid.get_sum() as f64) / (ALPHA + BETA + moves_count as f64 + 1.)
+}
+
 
 //------------------------------------------------
 // Unit tests
@@ -321,6 +333,36 @@ mod tests {
     assert_eq!(result.1, 10. / (GRID_SIDE * GRID_SIDE) as f64, "Emptiness");
     assert_eq!(result.2, 1. - 1. * GRID_NUM_GAP_SENSITIVITY , "Mergeability");
     assert_eq!(result.3, 3. / LOG2_VICTORY_THRESHOLD as f64, "Maximum tile");
+  }
+
+
+  // Testing bayes_beta_update()
+
+  #[test]
+  pub fn test_bayes_beta_update_empty() {
+    let grid = Grid::from_decoded(&[
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 2],
+    ]);
+
+    assert_eq!(bayes_beta_update(&grid, 0), (ALPHA + 1.) / (ALPHA + BETA + 1.));
+  }
+
+  #[test]
+  pub fn test_bayes_beta_update_late() {
+    let grid = Grid::from_decoded(&[
+      [128, 4, 2, 4],
+      [256, 8, 16, 2],
+      [64, 2, 0, 0],
+      [8, 0, 0, 0],
+    ]);
+
+    let move_count = 220;
+    let result = (ALPHA + 2. * (move_count + 1) as f64 - 0.5 * (46. + 64. + 256. + 128.)) / (ALPHA + BETA + move_count as f64 + 1.);
+
+    assert_eq!(bayes_beta_update(&grid, move_count), result);
   }
 
 }

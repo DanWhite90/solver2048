@@ -159,6 +159,25 @@ impl Grid<EncodedGrid> {
     self
   }
 
+  /// Returns the sum of the elements in the `Grid`.
+  pub fn get_sum(&self) -> EntryType {
+    let mut sum: EntryType = 0;
+
+    let mut mask_j = (ENCODING_BITS as f64).exp2() as EncodedEntryType - 1;
+
+    for j in 0..GRID_SIDE {
+      for i in 0..GRID_SIDE {
+        if self.state[i] & mask_j != 0 {
+          sum += (((self.state[i] & mask_j) >> ENCODING_BITS * j) as f64).exp2() as EntryType;
+        }
+      }
+
+      mask_j <<= ENCODING_BITS;
+    }
+    
+    sum
+  }
+
 }
 
 impl Grid<DestinationsGrid> {
@@ -481,6 +500,18 @@ mod tests {
     ]);
 
     assert_eq!(*grid.add_tile_to_position(2, 2).get_state(), *res.get_state());
+  }
+
+  #[test]
+  pub fn test_gamegrid_get_sum() {
+    let grid = Grid::from_decoded(&[
+      [0, 4, 4, 0],
+      [8, 0, 0, 8],
+      [8, 4, 4, 2],
+      [0, 0, 0, 2],
+    ]);
+
+    assert_eq!(grid.get_sum(), 44)
   }
 
 

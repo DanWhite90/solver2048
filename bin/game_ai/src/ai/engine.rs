@@ -2,20 +2,16 @@
 //! 
 //! Contains the AI engine that exposes the API to the user.
 
-use std::collections::{HashMap, VecDeque};
-use std::rc::Rc;
+use std::collections::VecDeque;
 
 use crate::ai::core::*;
-use crate::game::core::*;
-use crate::game::moves;
-use crate::game::moves::{PlayerMove, LineStackingResult};
+use crate::game::moves::PlayerMove;
+use crate::game::engine::Game;
 
 
 //------------------------------------------------
 // Types and Definitions
 //------------------------------------------------
-
-const MOVES_QUEUE_CAPACITY: usize = 20;
 
 pub enum AIState {
   Active,
@@ -23,10 +19,9 @@ pub enum AIState {
 }
 
 pub struct AIEngine {
-  current_grid: Grid<EncodedGrid>,
+  game: Game,
   state: AIState,
   optimal_moves_stream: VecDeque<PlayerMove>,
-  precomputed_moves: HashMap<EncodedEntryType, LineStackingResult>,
 }
 
 
@@ -39,15 +34,12 @@ pub struct AIEngine {
 impl AIEngine {
 
   /// Constructor.
-  pub fn new(grid: &Grid<EncodedGrid>) -> Self {
-
-    let precomputed_moves = moves::make_precomputed_hashmap();
+  pub fn new() -> Self {
 
     AIEngine {
-      current_grid: *grid,
+      game: Game::new(),
       state: AIState::Inactive,
       optimal_moves_stream: VecDeque::with_capacity(MOVES_QUEUE_CAPACITY),
-      precomputed_moves,
     }
     
   }
@@ -68,11 +60,6 @@ impl AIEngine {
 //------------------------------------------------
 // Functions
 //------------------------------------------------
-
-fn alpha_beta(grid: &Grid<EncodedGrid>) {
-
-}
-
 
 
 //------------------------------------------------
