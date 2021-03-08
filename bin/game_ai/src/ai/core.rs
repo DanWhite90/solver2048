@@ -41,7 +41,7 @@ const BETA: f64 = 1.;
 // DATA STRUCTURES
 
 /// Contains all the data required by the AI that needs to be stored in a node in the forecast tree.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct AINode {
   grid: Grid<EncodedGrid>,
   originating_move: Option<PlayerMove>,
