@@ -2,7 +2,6 @@
 //! 
 //! Contains the basic definitions and implementations for the objects used by the AI engine.
 
-use std::rc::Rc;
 use std::collections::HashMap;
 use std::cmp;
 
@@ -41,22 +40,12 @@ const BETA: f64 = 1.;
 
 /// Contains all the data required by the AI that needs to be stored in a node in the forecast tree.
 #[derive(Copy, Clone)]
-pub struct AINodeData {
-  utility: f64,
-  originating_move: Option<PlayerMove>,
-}
-
-/// Contains all the information needed in the AI forecast tree to compute the optimal move.
-/// The next sibling weak reference is meant in BFS order.
-#[derive(Clone)]
 pub struct AINode {
-  data: AINodeData,
-  children: Vec<Rc<AINode>>,
-}
-
-/// The forecast tree to be processed in order to compute the optimal move.
-pub struct AITree {
-  root: Rc<AINode>,
+  grid: Grid<EncodedGrid>,
+  originating_move: Option<PlayerMove>,
+  delta_score: u32,
+  path_probability: f64,
+  depth: usize,
 }
 
 
@@ -66,40 +55,31 @@ pub struct AITree {
 
 // Inherent
 
-impl AINodeData {
-
-  /// Constructor.
-  pub fn new(utility: f64, originating_move: Option<PlayerMove>) -> Self {
-    AINodeData {
-      utility,
-      originating_move,
-    }
-  }
-
-  // Getters
-  pub fn get_utility(&self) -> f64 { self.utility }
-  pub fn get_originating_move(&self) -> Option<PlayerMove> { self.originating_move }
-
-}
-
 impl AINode {
 
   /// Constructor.
-  pub fn new(data: &AINodeData) -> Self {
+  pub fn new(
+    grid: &Grid<EncodedGrid>, 
+    originating_move: Option<PlayerMove>,
+    delta_score: u32,
+    path_probability: f64,
+    depth: usize
+  ) -> Self {
     AINode {
-      data: *data,
-      children: vec![],
+      grid: *grid,
+      originating_move,
+      delta_score,
+      path_probability,
+      depth,
     }
   }
   
   // Getters
-  pub fn get_data(&self) -> &AINodeData { &self.data }
-  pub fn get_children(&self) -> &Vec<Rc<AINode>> { &self.children }
-
-  /// Adds a new child to the node, already existing nodes are overwritten.
-  pub fn add_child(&mut self, child: Rc<AINode>) { 
-    self.children.push(child);
-  }
+  pub fn get_grid(&self) -> &Grid<EncodedGrid> { &self.grid }
+  pub fn get_originating_move(&self) -> Option<PlayerMove> { self.originating_move }
+  pub fn get_delta_score(&self) -> u32 { self.delta_score }
+  pub fn get_path_probability(&self) -> f64 { self.path_probability }
+  pub fn get_depth(&self) -> usize { self.depth }
 
 }
 
@@ -226,7 +206,6 @@ pub fn utility(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType,
 }
 
 /// This function calculates the posterior probability of a 2-tile assuming a Beta likelihood.
-/// Sums elements in the grid from the encoded version of the `Grid` itself.
 pub fn bayes_beta_update(grid: &Grid<EncodedGrid>, moves_count: usize) -> f64 {
   (ALPHA + (2 * (moves_count + 1)) as f64 - 0.5 * grid.get_sum() as f64) / (ALPHA + BETA + moves_count as f64 + 1.)
 }
