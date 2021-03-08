@@ -17,10 +17,12 @@ use crate::game::engine;
 
 // AI struct and tree parameters
 pub const AVAILABLE_MOVES_COUNT: usize = 4;
-pub const TREE_DEPTH: usize = 6;
-pub const TREE_SIZE: usize = AVAILABLE_MOVES_COUNT.pow(TREE_DEPTH as u32 + 1) - 1; // must satisfy: TREE_SIZE >= AVAILABLE_MOVES_COUNT ** (TREE_DEPTH + 1) - 1
+pub const DEFAULT_TREE_DEPTH: usize = 6;
+pub const TREE_SIZE: usize = AVAILABLE_MOVES_COUNT.pow(DEFAULT_TREE_DEPTH as u32 + 1) - 1; // must satisfy: TREE_SIZE >= AVAILABLE_MOVES_COUNT ** (DEFAULT_TREE_DEPTH + 1) - 1
+pub const TREE_SIZE_THRESHOLD: usize = 1200;
 pub const MOVE_CHILDREN_ARR_LENGTH: usize = GRID_SIDE.pow(2) * 2;
 pub const MOVES_QUEUE_CAPACITY: usize = 20;
+pub const PATH_PROBABILITY_THRESHOLD: f64 = 0.25;
 
 // Heuristics and utility parameters
 const LOG2_VICTORY_THRESHOLD: usize = 11; // need macro to make it log of VICTORY_THRESHOLD in game core.
