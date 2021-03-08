@@ -57,9 +57,9 @@ impl AIEngine {
   }
 
   /// This method generates the leaves of the forecast tree.
-  pub fn generate_leaves(&self, max_depth: usize) -> VecDeque<AINode> {
+  fn generate_leaves(&self, max_depth: usize) -> VecDeque<AINode> {
 
-    let mut queue = VecDeque::with_capacity(20);
+    let mut queue = VecDeque::with_capacity(100);
     let mut current_node: AINode;
     let mut new_node: AINode;
     let directions = [PlayerMove::Up, PlayerMove::Left, PlayerMove::Right, PlayerMove::Down]; // enums not iterable so order must be the same
@@ -100,7 +100,7 @@ impl AIEngine {
               for i in 0..GRID_SIDE {
 
                 // select only empty tiles
-                if move_result.get_new_grid()[i] & mask_j != 0 {
+                if move_result.get_new_grid()[i] & mask_j == 0 {
 
                   // make both 2 and 4 tile using the log2 versions [1, 2]
                   for tile in 1..=2 {
@@ -115,7 +115,7 @@ impl AIEngine {
                       },
                       move_result.get_delta_score(),
                       match tile {
-                        2 => estimated_probability,
+                        1 => estimated_probability,
                         _ => 1. - estimated_probability,
                       },
                       current_node.get_depth() + 1,
@@ -137,6 +137,7 @@ impl AIEngine {
 
               }
 
+              // shift to new column of the encoded grid
               mask_j <<= ENCODING_BITS;
             }
 
@@ -148,7 +149,7 @@ impl AIEngine {
 
     }
 
-    // if we get here we emptied the queue meaning we are facing terminating states along some paths
+    // if we get here we emptied the queue meaning we are facing terminating states at a certain depth
 
     // if we can reduce the depth we try and reduce it
     if max_depth > 0 {
@@ -175,6 +176,13 @@ impl AIEngine {
 #[cfg(test)]
 mod tests {
 
+  use super::*;
 
+
+  #[test]
+  pub fn test_generate_leaves() {
+    let mut ai = AIEngine::new();
+
+  }
 
 }
