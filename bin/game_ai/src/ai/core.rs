@@ -2,13 +2,11 @@
 //! 
 //! Contains the basic definitions and implementations for the objects used by the AI engine.
 
-use std::collections::HashMap;
 use std::cmp;
 
 use crate::encoding;
 use crate::game::core::*;
-use crate::game::moves::{PlayerMove, LineStackingResult};
-use crate::game::engine;
+use crate::game::moves::PlayerMove;
 
 
 //------------------------------------------------
@@ -50,6 +48,12 @@ pub struct AINode {
   depth: usize,
 }
 
+/// Contains the evaluation data for each possible move based on `AINode`s.
+pub struct AIMoveEvaluation {
+  expected_utility: f64,
+  count: usize,
+}
+
 
 //------------------------------------------------
 // Implementations
@@ -85,6 +89,24 @@ impl AINode {
 
 }
 
+impl AIMoveEvaluation {
+
+  /// Constructor.
+  pub fn new(expected_utility: f64, count: usize) -> Self {
+    AIMoveEvaluation {
+      expected_utility,
+      count,
+    }
+  }
+
+  // Getters
+  pub fn get_expected_utility(&self) -> f64 { self.expected_utility }
+  pub fn get_count(&self) -> usize { self.count }
+
+  pub fn inc_expected_utility(&mut self, delta: f64) { self.expected_utility += delta; }
+  pub fn inc_count(&mut self) { self.count += 1; }
+
+}
 
 //------------------------------------------------
 // Functions
@@ -183,16 +205,16 @@ fn heuristics_scores(grid: &Grid<EncodedGrid>) -> (f64, f64, f64, f64) {
 }
 
 /// Computes the utility of a grid from the set of heuristics scores.
-pub fn utility(grid: &Grid<EncodedGrid>, moves_table: &HashMap<EncodedEntryType, LineStackingResult>) -> f64 {
+pub fn utility(grid: &Grid<EncodedGrid>) -> f64 {
   let scores = heuristics_scores(grid);
 
   // If we are not in a winning state
   if scores.3 < 1. {
 
     // If it's game over value as -Inf
-    if scores.1 == 0. && engine::is_game_over(grid, moves_table) {
-      return -f64::INFINITY;
-    }
+    // if scores.1 == 0. && engine::is_game_over(grid, moves_table) {
+    //   return -f64::INFINITY;
+    // }
 
     // Otherwise compute Cobb-Douglas utility
     scores.0.powf(HOMOGENEITY_DEGREE * MONOTONICITY_WEIGHT)

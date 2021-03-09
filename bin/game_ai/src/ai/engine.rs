@@ -3,6 +3,10 @@
 //! Contains the AI engine that exposes the API to the user.
 
 use std::collections::{VecDeque, HashMap};
+use std::thread;
+use std::thread::{JoinHandle};
+use std::sync::mpsc;
+use std::sync::mpsc::{Sender, Receiver};
 
 use crate::ai::core::*;
 use crate::game::core::*;
@@ -25,6 +29,7 @@ pub struct AIEngine {
   game: Game,
   state: AIState,
   optimal_moves_stream: VecDeque<PlayerMove>,
+  moves_worker: JoinHandle<()>,
 }
 
 
@@ -39,10 +44,22 @@ impl AIEngine {
   /// Constructor.
   pub fn new() -> Self {
 
+    let (tx, rx): (Sender<PlayerMove>, Receiver<PlayerMove>) = mpsc::channel();
+
+    // this worker thread precomputes and buffers a sequence of optimal moves to make the game flow smoother
+    let moves_worker = thread::spawn(move || {
+
+      loop {
+        tx.send(PlayerMove::Up).unwrap();
+      }
+
+    });
+
     AIEngine {
       game: Game::new(),
       state: AIState::Inactive,
       optimal_moves_stream: VecDeque::with_capacity(MOVES_QUEUE_CAPACITY),
+      moves_worker,
     }
     
   }
@@ -66,7 +83,7 @@ impl AIEngine {
 /// This function generates the leaves of the forecast tree.
 fn generate_leaves(
   grid: &Grid<EncodedGrid>, 
-  move_count: u32, 
+  move_count: usize, 
   max_depth: usize, 
   precomputed_moves: &HashMap<EncodedEntryType, LineStackingResult>
 ) -> VecDeque<AINode> {
@@ -171,6 +188,63 @@ fn generate_leaves(
   // otherwise nothing can be done, meaning game over, return empty queue
   queue
 
+}
+
+/// this function calculates the optimal move given an initial state
+fn calculate_optimal_move(
+  grid: &Grid<EncodedGrid>, 
+  move_count: usize, 
+  max_depth: usize, 
+  precomputed_moves: &HashMap<EncodedEntryType, LineStackingResult>
+) -> Option<PlayerMove> {
+
+  use PlayerMove::{Up, Left, Right, Down};
+  
+  let leaves = generate_leaves(grid, move_count, max_depth, precomputed_moves);
+
+  // if empty tree or just root no move can be made so return None
+  if leaves.len() == 0 || leaves[0].get_depth() == 0 {
+    return None;
+  }
+
+  let mut optimal_move: Option<PlayerMove> = None;
+  let mut moves_utilities = HashMap::<PlayerMove, AIMoveEvaluation>::with_capacity(AVAILABLE_MOVES_COUNT);
+
+  // initialize evaluation data for each move
+  moves_utilities.insert(Up, AIMoveEvaluation::new(0., 0));
+  moves_utilities.insert(Left, AIMoveEvaluation::new(0., 0));
+  moves_utilities.insert(Right, AIMoveEvaluation::new(0., 0));
+  moves_utilities.insert(Down, AIMoveEvaluation::new(0., 0));
+
+  let mut direction: PlayerMove;
+  let mut utility_data_ref: &mut AIMoveEvaluation;
+
+  // evaluate each leaf
+  for node in leaves.iter() {
+    direction = node.get_originating_move().unwrap();
+    utility_data_ref = moves_utilities.get_mut(&direction).unwrap();
+
+    utility_data_ref.inc_expected_utility(node.get_path_probability() * utility(node.get_grid()));
+    utility_data_ref.inc_count();
+  }
+
+  let mut max_utility = -f64::INFINITY;
+  let mut move_utility: f64;
+
+  // normalize the evaluation and find best move
+  for (direction, data) in moves_utilities {
+    move_utility = data.get_expected_utility() / match data.get_count() {
+      0 => 1.,
+      count => (count as f64) / (count as f64 + 1.).ln(),
+    };
+
+    if data.get_count() > 0 && move_utility > max_utility {
+      max_utility = move_utility;
+      optimal_move = Some(direction);
+    }
+  }
+
+  optimal_move
 }
 
 
@@ -323,6 +397,26 @@ mod tests {
     let result = generate_leaves(&grid, 143, DEFAULT_TREE_DEPTH, &precomputed_moves);
 
     assert_eq!(result.len(), 0);
+  }
+
+
+  // Testing calculate_optimal_move()
+
+  #[test]
+  pub fn test_calculate_optimal_move() {
+
+    let precomputed_moves = moves::make_precomputed_hashmap();
+
+    let grid = Grid::from_decoded(&[
+      [4, 2, 4, 2],
+      [8, 512, 64, 4],
+      [1024, 265, 32, 16],
+      [64, 8, 8, 2],
+    ]);
+
+    let move_count = 909;
+
+    assert_eq!(calculate_optimal_move(&grid, move_count, DEFAULT_TREE_DEPTH, &precomputed_moves), Some(PlayerMove::Left));
   }
 
 }
