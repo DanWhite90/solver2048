@@ -92,7 +92,7 @@ fn generate_leaves(
 
   queue.push_back(root);
 
-  // generate nodes in a Breadth-First fashion
+  // generate nodes in a Breadth-First fashion to reach the sequence of leaves
   while queue.len() > 0 {
     current_node = queue.pop_front().unwrap();
 
@@ -114,7 +114,7 @@ fn generate_leaves(
               // select only empty tiles
               if move_result.get_new_grid()[i] & mask_j == 0 {
 
-                // make both 2 and 4 tile using the log2 versions [1, 2]
+                // make both 2 and 4 tile using the log2 versions [1, 2] to manipulate encoded grid directly
                 for tile in 1..=2 {
                   temp_grid = *move_result.get_new_grid();
                   temp_grid[i] |= tile << ENCODING_BITS * j;
@@ -134,7 +134,7 @@ fn generate_leaves(
                   );
 
                   // when a new node reaches a new depth, stop if the number of leaves has reached a certain threshold or depth reached a certain level
-                  if current_depth != current_node.get_depth() && queue.len() > TREE_SIZE_THRESHOLD || new_node.get_depth() > max_depth {
+                  if current_depth != new_node.get_depth() && (queue.len() > TREE_SIZE_THRESHOLD || new_node.get_depth() > max_depth) {
                     queue.push_front(current_node);
                     return queue;
                   }
