@@ -20,16 +20,38 @@ use crate::game::engine::Game;
 // Types and Definitions
 //------------------------------------------------
 
+/// Describes the possible state of the AI.
+#[derive(Copy, Clone)]
 pub enum AIState {
   Active,
   Inactive,
 }
 
+/// Specifies the messages that can be sent to the worker thread.
+#[derive(Copy, Clone)]
+enum WorkerMessage {
+  Work(Grid<EncodedGrid>),
+  Pause,
+  Shutdown,
+  MoveReceived,
+}
+
+/// Specifies the responses that the worker thread can return.
+#[derive(Copy, Clone)]
+enum WorkerResponse {
+  OptimalMove(PlayerMove),
+  EmptyBuffer,
+  Paused,
+}
+
+/// The basic structure of the AI.
+/// The AI owns the game and exposes its public API to the user, so only an instance of `AIEngine` is needed to run the full application.
 pub struct AIEngine {
   game: Game,
   state: AIState,
-  optimal_moves_stream: VecDeque<PlayerMove>,
   moves_worker: JoinHandle<()>,
+  worker_task_sender: Sender<WorkerMessage>,
+  worker_response_receiver: Receiver<WorkerResponse>,
 }
 
 
@@ -42,35 +64,67 @@ pub struct AIEngine {
 impl AIEngine {
 
   /// Constructor.
+  /// Sets up the initial shared state and communication channels between main thread and moves worker thread.
   pub fn new() -> Self {
 
-    let (tx, rx): (Sender<PlayerMove>, Receiver<PlayerMove>) = mpsc::channel();
+    // transmission channels endpoints for full duplex communication between main thread and worker thread
+    let (worker_task_sender, worker_task_receiver): (Sender<WorkerMessage>, Receiver<WorkerMessage>) = mpsc::channel();
+    let (worker_response_sender, worker_response_receiver): (Sender<WorkerResponse>, Receiver<WorkerResponse>) = mpsc::channel();
 
     // this worker thread precomputes and buffers a sequence of optimal moves to make the game flow smoother
-    let moves_worker = thread::spawn(move || {
-
-      loop {
-        tx.send(PlayerMove::Up).unwrap();
-      }
-
-    });
+    let moves_worker = thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender) );
 
     AIEngine {
       game: Game::new(),
       state: AIState::Inactive,
-      optimal_moves_stream: VecDeque::with_capacity(MOVES_QUEUE_CAPACITY),
       moves_worker,
+      worker_task_sender,
+      worker_response_receiver,
     }
     
   }
 
-  /// Gets the next optimal move enqueued  based on the current state of the grid
+  /// Getters
+  pub fn get_game(&self) -> &Game { &self.game }
+  pub fn get_game_mut(&mut self) -> &mut Game {&mut self.game }
+
+  /// Gets the next optimal move enqueued based on the current state of the grid.
   pub fn get_optimal_move(&self) -> Option<PlayerMove> {
-    if self.optimal_moves_stream.len() > 0 {
-      Some(*self.optimal_moves_stream.front().unwrap())
-    } else {
-      None
+
+    unimplemented!("Need to implement optimal move getter from worker messages");
+
+  }
+
+  /// Toggle the AI and return the new state.
+  pub fn toggle_ai(&mut self) -> AIState {
+
+    use AIState::{Active, Inactive};
+
+    match self.state {
+      Active => {
+        // should always be able to send
+        self.worker_task_sender.send(WorkerMessage::Pause).unwrap();
+        self.state = Inactive;
+      },
+      Inactive => {
+        // should always be able to send
+        self.worker_task_sender.send(WorkerMessage::Work(*self.game.get_grid())).unwrap();
+        self.state = Inactive;
+      },
     }
+
+    self.state
+  }
+
+}
+
+
+// Drop
+
+impl Drop for AIEngine {
+
+  fn drop(&mut self) {
+
   }
 
 }
@@ -245,6 +299,17 @@ fn calculate_optimal_move(
   }
 
   optimal_move
+}
+
+/// Defines the job of the moves worker.
+fn worker_job(tasks: Receiver<WorkerMessage>, responses: Sender<WorkerResponse>) {
+
+  let mut buffered_count = 0; // keeps track of how many moves have been sent to the main thread without an acknowledgement.
+
+  loop {
+
+  }
+
 }
 
 
