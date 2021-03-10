@@ -27,6 +27,13 @@ pub enum AIState {
   Inactive,
 }
 
+/// Describes the possible states the worker thread can be in.
+enum WorkerState {
+  Working,
+  Paused,
+  Terminating,
+}
+
 /// Specifies the messages that can be sent to the worker thread.
 #[derive(Copy, Clone)]
 enum WorkerMessage {
@@ -304,9 +311,40 @@ fn calculate_optimal_move(
 /// Defines the job of the moves worker.
 fn worker_job(tasks: Receiver<WorkerMessage>, responses: Sender<WorkerResponse>) {
 
+  use WorkerMessage::{Work, Pause, Shutdown, MoveReceived};
+  use WorkerState::{Paused, Working, Terminating};
+
   let mut buffered_count = 0; // keeps track of how many moves have been sent to the main thread without an acknowledgement.
+  let mut current_grid: Grid<EncodedGrid>;
+  let mut worker_state = WorkerState::Paused;
 
   loop {
+
+    // Check if there are messages from the main before working
+    for message in tasks.try_iter() {
+      match message {
+        Work(grid) => current_grid = grid,
+        Pause => {
+          worker_state = Paused;
+          buffered_count = 0;
+        },
+        MoveReceived => {
+          if buffered_count > 0 { buffered_count -= 1; }
+        },
+        Shutdown => worker_state = Terminating,
+      }
+    }
+
+    // Start executing tasks
+    match worker_state {
+      Paused => thread::yield_now(),
+      Working => {
+        // process move while buffer below threshold
+        // increase buffer count
+        // send response to main
+      },
+      Terminating => break,
+    }
 
   }
 
