@@ -48,6 +48,14 @@ struct HistoryItem {
   state: GameState,
 }
 
+/// This struct contains the animation data returned by each process_move()
+pub struct AnimationData {
+  stacked_grid: Grid<EncodedGrid>,
+  destinations_grid: Grid<DestinationsGrid>,
+  tile: EntryType,
+  tile_position: (usize, usize),
+}
+
 
 //------------------------------------------------
 // Implementations
@@ -59,20 +67,21 @@ impl Game {
 
   /// Constructor.
   pub fn new() -> Self {
+
+    let mut grid = Grid::new(&[0; GRID_SIDE]);
+    add_random_tile(&mut grid);
+
     Game {
-      grid: *add_random_tile(&mut Grid::new(&[0; GRID_SIDE])),
+      grid,
       state: GameState::new(),
       history: VecDeque::with_capacity(HISTORY_LENGTH),
       precomputed_moves: moves::make_precomputed_hashmap(),
     }
+
   }
 
   /// Reset the game
-  pub fn reset(&mut self) {
-    self.grid = *add_random_tile(&mut Grid::new(&[0; GRID_SIDE]));
-    self.state = GameState::new();
-    self.history = VecDeque::with_capacity(HISTORY_LENGTH);
-  }
+  pub fn reset(&mut self) { *self = Game::new() }
 
   // Getters
   pub fn get_grid(&self) -> &Grid<EncodedGrid> { &self.grid }
@@ -80,7 +89,7 @@ impl Game {
   pub fn get_precomputed_moves(&self) -> &HashMap<EncodedEntryType, LineStackingResult> { &self.precomputed_moves }
 
   /// Process the `PlayerMove` to transition to a new grid state by stacking the grid and adding a random tile
-  pub fn process_move(&mut self, player_move: PlayerMove) -> GameState {
+  pub fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData> {
 
     match self.state.get_status() {
 
@@ -112,7 +121,7 @@ impl Game {
           self.state.inc_move_count();
 
           // Add new random tile. There's always an empty tile after a valid move so no check needed
-          add_random_tile(&mut self.grid);
+          let (tile, tile_position) = add_random_tile(&mut self.grid);
 
           // Update victory. Executed only the first time victory is achieved
           if !self.state.get_victory() && is_victory(&self.grid) {
@@ -127,16 +136,24 @@ impl Game {
           } else if let GameStatus::New = self.state.get_status() {
             self.state.set_status(GameStatus::Playing);
           }
+          
+          return Some(AnimationData::new(
+            move_result.get_new_grid(),
+            move_result.get_destination_grid(),
+            tile,
+            tile_position,
+          ));
 
         }
 
+        // If the move is not effective return None
+        None
+
       },
 
-      // Otherwise do nothing and let the function return the unchanged state
-      _ => (),
+      // Otherwise do nothing
+      _ => None,
     }
-
-    self.state
 
   }
 
@@ -184,13 +201,33 @@ impl GameState {
 
 }
 
+impl AnimationData {
+
+  /// Constructor.
+  pub fn new(stacked_grid: &Grid<EncodedGrid>, destinations_grid: &Grid<DestinationsGrid>, tile: EntryType, tile_position: (usize, usize)) -> Self {
+    AnimationData {
+      stacked_grid: *stacked_grid,
+      destinations_grid: *destinations_grid,
+      tile,
+      tile_position,
+    }
+  }
+
+  // Getters
+  pub fn get_stacked_grid(&self) -> &Grid<EncodedGrid> { &self.stacked_grid }
+  pub fn get_destinations_grid(&self) -> &Grid<DestinationsGrid> {&self.destinations_grid }
+  pub fn get_tile(&self) -> EntryType { self.tile }
+  pub fn get_tile_position(&self) -> (usize, usize) { self.tile_position }
+
+}
+
 
 //------------------------------------------------
 // Functions
 //------------------------------------------------
 
-/// Adds a random tile to the grid
-fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
+/// Adds a random tile to the grid (as an out parameter) and returns the tile and position coordinates.
+fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> (EntryType, (usize, usize)) {
 
   // Generate random tile according to the probability of spawning a 2 or a 4
   let mut new_tile: EntryType = 2;
@@ -201,7 +238,10 @@ fn add_random_tile(grid: &mut Grid<EncodedGrid>) -> &mut Grid<EncodedGrid> {
   // Get a position among the empty tiles in the grid in "reading order" where we place the new tile
   let position: isize = (rand::random::<f64>() * grid.get_zeros() as f64) as isize;
 
-  grid.add_tile_to_position(new_tile, position)
+  grid.add_tile_to_position(new_tile, position);
+
+  (new_tile, (position as usize / GRID_SIDE, position as usize % GRID_SIDE))
+
 }
 
 /// Checks if a game grid is in a victory state 
