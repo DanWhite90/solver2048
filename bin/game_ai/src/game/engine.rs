@@ -78,8 +78,9 @@ pub trait GameAPI {
   /// Reset the game.
   fn reset(&mut self);
 
-  /// Process the move and return animation data if valid move or valid state.
-  fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData>;
+  /// Process the possibly null move and return animation data if valid move or valid state.
+  /// Accepts `None` values because if can be called with nothing when the AI is active to just process the optimal move.
+  fn process_move(&mut self, player_move: Option<PlayerMove>) -> Option<AnimationData>;
 
   /// Undo the last move if possible.
   fn undo_last_move(&mut self);
@@ -174,7 +175,12 @@ impl GameAPI for Game {
 
   fn reset(&mut self) { *self = Game::new() }
   
-  fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData> {
+  fn process_move(&mut self, player_move: Option<PlayerMove>) -> Option<AnimationData> {
+
+    let player_move = match player_move {
+      Some(value) => value,
+      None => return None,
+    };
 
     match self.state.get_status() {
 
@@ -521,7 +527,7 @@ mod tests {
       precomputed_moves: make_precomputed_hashmap(),
     };
 
-    game.process_move(PlayerMove::Left);
+    game.process_move(Some(PlayerMove::Left));
 
     assert_eq!(game.get_state().get_status(), GameStatus::Playing);
     assert_eq!(game.get_state().get_move_count(), 6);
@@ -550,7 +556,7 @@ mod tests {
       precomputed_moves: make_precomputed_hashmap(),
     };
 
-    game.process_move(PlayerMove::Left);
+    game.process_move(Some(PlayerMove::Left));
 
     assert_eq!(game.get_state().get_status(), GameStatus::Over);
     assert_eq!(game.get_state().get_move_count(), 6);
@@ -570,7 +576,7 @@ mod tests {
 
     // Fill history
     while game.history.len() < HISTORY_LENGTH {
-      game.process_move(player_move[count % 4]);
+      game.process_move(Some(player_move[count % 4]));
       count += 1;
     }
 
@@ -578,7 +584,7 @@ mod tests {
 
     // Add some extra moves
     for _ in 0..10 {
-      game.process_move(player_move[count % 4]);
+      game.process_move(Some(player_move[count % 4]));
       count += 1;
     }
 
@@ -620,7 +626,7 @@ mod tests {
 
     // Fill history
     while game.history.len() < HISTORY_LENGTH {
-      game.process_move(player_move[count % 4]);
+      game.process_move(Some(player_move[count % 4]));
       count += 1;
     }
 
@@ -632,7 +638,7 @@ mod tests {
 
     // Add one extra move, whichever is feasible
     for i in 0..4 {
-      game.process_move(player_move[i]);
+      game.process_move(Some(player_move[i]));
       if game.state.get_move_count() > move_count { break; }
     }
 

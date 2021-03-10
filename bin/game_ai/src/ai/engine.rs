@@ -13,7 +13,7 @@ use crate::game::core::*;
 use crate::game::moves;
 use crate::game::moves::{PlayerMove, LineStackingResult, MoveStackingResult};
 use crate::game::engine;
-use crate::game::engine::{Game, GameState, AnimationData, GameAPI};
+use crate::game::engine::{Game, GameStatus, GameState, AnimationData, GameAPI};
 
 
 //------------------------------------------------
@@ -97,7 +97,7 @@ impl AIEngine {
   pub fn get_state(&self) -> AIState { self.state }
 
   /// Gets the next optimal move enqueued based on the current state of the grid.
-  pub fn get_optimal_move(&self) -> Option<PlayerMove> {
+  pub fn get_next_optimal_move(&self) -> Option<PlayerMove> {
 
     unimplemented!("Need to implement optimal move getter from worker messages");
 
@@ -136,25 +136,49 @@ impl GameAPI for AIEngine {
   fn get_state(&self) -> &GameState { &self.game.get_state() }
 
   fn reset(&mut self) { 
-    self.game.reset();
     
-    // add stopping ai if reset
+    // deactivate AI if active on reset
+    if let AIState::Active = self.state {
+      self.toggle_ai();
+    }
 
-    unimplemented!()
+    self.game.reset();
   }
 
-  fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData> {
+  fn process_move(&mut self, mut player_move: Option<PlayerMove>) -> Option<AnimationData> {
 
-    // process move manually only if the AI is not active
+    // if the AI is active override the move and apply the next optimal move enqueued
+    if let AIState::Active = self.state {
+      player_move = self.get_next_optimal_move();
+    }
 
-    unimplemented!()
+    let animation_data = self.game.process_move(player_move);
+
+    // when the AI is active, after the move has been processed check if the AI should stop because the game ended or there is a victory.
+    if let AIState::Active = self.state {
+
+      // if it's game over
+      if let GameStatus::Over = self.game.get_state().get_status() {
+        self.toggle_ai();
+
+      // or victory
+      } else if self.game.get_state().get_victory() {
+        self.toggle_ai();
+      }
+
+    }
+
+    animation_data
+
   }
 
   fn undo_last_move(&mut self) {
 
-    // process undoing only if the AI is not active (or undo and stop the AI)
+    // process undoing only if the AI is not active
+    if let AIState::Inactive = self.state {
+      self.game.undo_last_move();
+    }
 
-    unimplemented!()
   }
 
 }
@@ -166,6 +190,7 @@ impl Drop for AIEngine {
 
   fn drop(&mut self) {
 
+    unimplemented!("Should prompt the worker thread to shutdown and join")
   }
 
 }
@@ -382,6 +407,7 @@ fn worker_job(tasks: Receiver<WorkerMessage>, responses: Sender<WorkerResponse>)
 
   }
 
+  unimplemented!("finish worker_job() implementation")
 }
 
 
