@@ -4,7 +4,7 @@
 
 use std::collections::{VecDeque, HashMap};
 use std::thread;
-use std::thread::{JoinHandle};
+use std::thread::JoinHandle;
 use std::sync::mpsc;
 use std::sync::mpsc::{Sender, Receiver};
 
@@ -13,7 +13,7 @@ use crate::game::core::*;
 use crate::game::moves;
 use crate::game::moves::{PlayerMove, LineStackingResult, MoveStackingResult};
 use crate::game::engine;
-use crate::game::engine::Game;
+use crate::game::engine::{Game, GameState, AnimationData, GameAPI};
 
 
 //------------------------------------------------
@@ -94,6 +94,7 @@ impl AIEngine {
   /// Getters
   pub fn get_game(&self) -> &Game { &self.game }
   pub fn get_game_mut(&mut self) -> &mut Game {&mut self.game }
+  pub fn get_state(&self) -> AIState { self.state }
 
   /// Gets the next optimal move enqueued based on the current state of the grid.
   pub fn get_optimal_move(&self) -> Option<PlayerMove> {
@@ -121,6 +122,39 @@ impl AIEngine {
     }
 
     self.state
+  }
+
+}
+
+
+// GameAPI
+
+impl GameAPI for AIEngine {
+
+  fn get_grid(&self) -> &Grid<EncodedGrid> { &self.game.get_grid() }
+
+  fn get_state(&self) -> &GameState { &self.game.get_state() }
+
+  fn reset(&mut self) { 
+    self.game.reset();
+    
+    // add stopping ai if reset
+
+    unimplemented!()
+  }
+
+  fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData> {
+
+    // process move manually only if the AI is not active
+
+    unimplemented!()
+  }
+
+  fn undo_last_move(&mut self) {
+
+    // process undoing only if the AI is not active (or undo and stop the AI)
+
+    unimplemented!()
   }
 
 }

@@ -58,6 +58,36 @@ pub struct AnimationData {
 
 
 //------------------------------------------------
+// Traits
+//------------------------------------------------
+
+/// This trait defines the public API available to the user to interact with the game.
+pub trait GameAPI {
+
+  // State interaction
+  
+  /// Get game grid.
+  fn get_grid(&self) -> &Grid<EncodedGrid>;
+
+  /// Get game state.
+  fn get_state(&self) -> &GameState;
+
+
+  // Behaviour
+
+  /// Reset the game.
+  fn reset(&mut self);
+
+  /// Process the move and return animation data if valid move or valid state.
+  fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData>;
+
+  /// Undo the last move if possible.
+  fn undo_last_move(&mut self);
+
+}
+
+
+//------------------------------------------------
 // Implementations
 //------------------------------------------------
 
@@ -80,16 +110,71 @@ impl Game {
 
   }
 
-  /// Reset the game
-  pub fn reset(&mut self) { *self = Game::new() }
+  // Getters
+  pub fn get_precomputed_moves(&self) -> &HashMap<EncodedEntryType, LineStackingResult> { &self.precomputed_moves }
+  
+}
+
+impl GameState {
+
+  // Base constructor.
+  pub fn new() -> Self {
+    GameState {
+      status: GameStatus::New,
+      move_count: 0,
+      score: 0,
+      victory: false,
+    }
+  }
+
+  // Getters.
+  pub fn get_status(&self) -> GameStatus { self.status }
+  pub fn get_move_count(&self) -> u32 { self.move_count }
+  pub fn get_score(&self) -> u32 { self.score }
+  pub fn get_victory(&self) -> bool { self.victory }
+
+  // Setters.
+  fn set_status(&mut self, value: GameStatus) { self.status = value; }
+  fn set_victory(&mut self, value: bool) { self.victory = value; }
+
+  // "Increasers"
+  fn inc_move_count(&mut self) { self.move_count += 1; }
+  fn inc_score(&mut self, delta: u32) { self.score += delta; }
+
+}
+
+impl AnimationData {
+
+  /// Constructor.
+  pub fn new(stacked_grid: &Grid<EncodedGrid>, destinations_grid: &Grid<DestinationsGrid>, tile: EntryType, tile_position: (usize, usize)) -> Self {
+    AnimationData {
+      stacked_grid: *stacked_grid,
+      destinations_grid: *destinations_grid,
+      tile,
+      tile_position,
+    }
+  }
 
   // Getters
-  pub fn get_grid(&self) -> &Grid<EncodedGrid> { &self.grid }
-  pub fn get_state(&self) -> &GameState { &self.state }
-  pub fn get_precomputed_moves(&self) -> &HashMap<EncodedEntryType, LineStackingResult> { &self.precomputed_moves }
+  pub fn get_stacked_grid(&self) -> &Grid<EncodedGrid> { &self.stacked_grid }
+  pub fn get_destinations_grid(&self) -> &Grid<DestinationsGrid> {&self.destinations_grid }
+  pub fn get_tile(&self) -> EntryType { self.tile }
+  pub fn get_tile_position(&self) -> (usize, usize) { self.tile_position }
 
-  /// Process the `PlayerMove` to transition to a new grid state by stacking the grid and adding a random tile
-  pub fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData> {
+}
+
+
+// GameAPI
+
+impl GameAPI for Game {
+  
+  fn get_grid(&self) -> &Grid<EncodedGrid> { &self.grid }
+
+  fn get_state(&self) -> &GameState { &self.state }
+
+  fn reset(&mut self) { *self = Game::new() }
+  
+  fn process_move(&mut self, player_move: PlayerMove) -> Option<AnimationData> {
 
     match self.state.get_status() {
 
@@ -156,9 +241,8 @@ impl Game {
     }
 
   }
-
-  /// Undo the last move.
-  pub fn undo_last_move(&mut self) {
+  
+  fn undo_last_move(&mut self) {
 
     if self.history.len() > 0 {
 
@@ -170,54 +254,6 @@ impl Game {
     }
 
   }
-  
-}
-
-impl GameState {
-
-  // Base constructor.
-  pub fn new() -> Self {
-    GameState {
-      status: GameStatus::New,
-      move_count: 0,
-      score: 0,
-      victory: false,
-    }
-  }
-
-  // Getters.
-  pub fn get_status(&self) -> GameStatus { self.status }
-  pub fn get_move_count(&self) -> u32 { self.move_count }
-  pub fn get_score(&self) -> u32 { self.score }
-  pub fn get_victory(&self) -> bool { self.victory }
-
-  // Setters.
-  fn set_status(&mut self, value: GameStatus) { self.status = value; }
-  fn set_victory(&mut self, value: bool) { self.victory = value; }
-
-  // "Increasers"
-  fn inc_move_count(&mut self) { self.move_count += 1; }
-  fn inc_score(&mut self, delta: u32) { self.score += delta; }
-
-}
-
-impl AnimationData {
-
-  /// Constructor.
-  pub fn new(stacked_grid: &Grid<EncodedGrid>, destinations_grid: &Grid<DestinationsGrid>, tile: EntryType, tile_position: (usize, usize)) -> Self {
-    AnimationData {
-      stacked_grid: *stacked_grid,
-      destinations_grid: *destinations_grid,
-      tile,
-      tile_position,
-    }
-  }
-
-  // Getters
-  pub fn get_stacked_grid(&self) -> &Grid<EncodedGrid> { &self.stacked_grid }
-  pub fn get_destinations_grid(&self) -> &Grid<DestinationsGrid> {&self.destinations_grid }
-  pub fn get_tile(&self) -> EntryType { self.tile }
-  pub fn get_tile_position(&self) -> (usize, usize) { self.tile_position }
 
 }
 
