@@ -31,24 +31,26 @@ pub enum AIState {
 enum WorkerState {
   Working,
   Paused,
+  Waiting,
   Terminating,
 }
 
 /// Specifies the messages that can be sent to the worker thread.
+/// The move message includes the grid to work on and the moves count for that particular grid.
 #[derive(Copy, Clone)]
 enum WorkerMessage {
-  Work(Grid<EncodedGrid>),
+  Work(Grid<EncodedGrid>, usize),
   Pause,
   Shutdown,
   MoveReceived,
 }
 
 /// Specifies the responses that the worker thread can return.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 enum WorkerResponse {
-  OptimalMove(PlayerMove),
-  EmptyBuffer,
+  OptimalMove(Option<PlayerMove>),
   Paused,
+  BufferFull,
 }
 
 /// The basic structure of the AI.
@@ -79,7 +81,7 @@ impl AIEngine {
     let (worker_response_sender, worker_response_receiver): (Sender<WorkerResponse>, Receiver<WorkerResponse>) = mpsc::channel();
 
     // this worker thread precomputes and buffers a sequence of optimal moves to make the game flow smoother
-    let moves_worker = thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender) );
+    let moves_worker = thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender));
 
     AIEngine {
       game: Game::new(),
@@ -100,7 +102,6 @@ impl AIEngine {
   pub fn get_next_optimal_move(&self) -> Option<PlayerMove> {
 
     unimplemented!("Need to implement optimal move getter from worker messages");
-
   }
 
   /// Toggle the AI and return the new state.
@@ -109,14 +110,23 @@ impl AIEngine {
     use AIState::{Active, Inactive};
 
     match self.state {
+
       Active => {
+
         // should always be able to send
         self.worker_task_sender.send(WorkerMessage::Pause).unwrap();
+
         self.state = Inactive;
       },
+
       Inactive => {
+
         // should always be able to send
-        self.worker_task_sender.send(WorkerMessage::Work(*self.game.get_grid())).unwrap();
+        self.worker_task_sender.send(WorkerMessage::Work(
+          *self.game.get_grid(),
+          self.game.get_state().get_move_count() as usize,
+        )).unwrap();
+
         self.state = Inactive;
       },
     }
@@ -371,43 +381,104 @@ fn calculate_optimal_move(
 fn worker_job(tasks: Receiver<WorkerMessage>, responses: Sender<WorkerResponse>) {
 
   use WorkerMessage::{Work, Pause, Shutdown, MoveReceived};
-  use WorkerState::{Paused, Working, Terminating};
+  use WorkerState::{Paused, Working, Waiting, Terminating};
 
+  // worker state variables
   let mut buffered_count = 0; // keeps track of how many moves have been sent to the main thread without an acknowledgement.
-  let mut current_grid: Grid<EncodedGrid>;
-  let mut worker_state = WorkerState::Paused;
+  let mut worker_state = Paused;
 
+  // worker data variables
+  let mut current_grid = Grid::new(&[0; GRID_SIDE]);
+  let mut current_move_count: usize = 0;
+  let precomputed_moves = moves::make_precomputed_hashmap(); // Duplicated with Game... should be under Arc<Mutex<_>> with Game to save memory...
+
+  // Worker loop
   loop {
 
-    // Check if there are messages from the main before working
+    // Check if there are messages from the main before working, without blocking for messages
     for message in tasks.try_iter() {
       match message {
-        Work(grid) => current_grid = grid,
+
+        // Start working anew with a new grid each time, the worker never resumes from previous states after pausing
+        // to avoid dealing with the cases in which the player made a move inbetween AI activations and whether it was effective or not
+        // The overhead is minor, ideally the user doesn't get to activate and deactivate the AI continuously
+        Work(grid, move_count) =>{ 
+          worker_state = Working;
+          current_grid = grid;
+          current_move_count = move_count;
+          buffered_count = 0; // reset state
+        },
+
+        // Pause and retun an acknowledgement
         Pause => {
           worker_state = Paused;
-          buffered_count = 0;
+          responses.send(WorkerResponse::Paused).unwrap(); // the main thread needs to know if when the worker paused in order to empty the buffer safely
         },
+
+        // Receive acknowledgement from main of move received, so make space for a new move to send
         MoveReceived => {
           if buffered_count > 0 { buffered_count -= 1; }
         },
-        Shutdown => worker_state = Terminating,
+
+        // Enter terminating state on shutdown command and break out of the message checking loop
+        Shutdown => {
+          worker_state = Terminating;
+          break
+        },
       }
     }
 
     // Start executing tasks
     match worker_state {
+
+      // If paused, no point in wasting CPU time. Yield to the OS scheduler immediately
       Paused => thread::yield_now(),
+
+      // Keep working on new moves untill buffer is full
       Working => {
-        // process move while buffer below threshold
-        // increase buffer count
-        // send response to main
+        
+        // process move while buffer not full
+        if buffered_count < MOVES_QUEUE_CAPACITY {
+
+          buffered_count += 1;
+
+          responses.send(
+            WorkerResponse::OptimalMove(
+              calculate_optimal_move(&current_grid, current_move_count, DEFAULT_TREE_DEPTH, &precomputed_moves)
+            )).unwrap();
+
+        // if the buffer is full, send info and yield to the OS scheduler
+        } else {
+          worker_state = Waiting;
+          responses.send(WorkerResponse::BufferFull).unwrap();
+          thread::yield_now();
+        }
+
       },
+
+      // If waiting for the buffer to be consumed because full
+      Waiting => {
+
+        // If the buffer is still full yield immediately
+        if buffered_count >= MOVES_QUEUE_CAPACITY {
+          thread::yield_now();
+
+        // otherwise resume working
+        } else {
+          worker_state = Working;
+        }
+
+      },
+
+      // If scheduled for termination break the worker loop to return and be rejoined to the main
       Terminating => break,
     }
 
   }
 
-  unimplemented!("finish worker_job() implementation")
+  // after shutdown yield immediately to join
+  thread::yield_now();
+
 }
 
 
@@ -580,6 +651,124 @@ mod tests {
     let move_count = 909;
 
     assert_eq!(calculate_optimal_move(&grid, move_count, DEFAULT_TREE_DEPTH, &precomputed_moves), Some(PlayerMove::Left));
+  }
+
+
+  // Testing worker_job()
+
+  #[test]
+  pub fn test_worker_job() {
+
+    use WorkerMessage::{Work, Pause, MoveReceived, Shutdown};
+    use WorkerResponse::{OptimalMove, Paused, BufferFull};
+
+    let game = Game::new();
+
+    let (worker_task_sender, worker_task_receiver): (Sender<WorkerMessage>, Receiver<WorkerMessage>) = mpsc::channel();
+    let (worker_response_sender, worker_response_receiver): (Sender<WorkerResponse>, Receiver<WorkerResponse>) = mpsc::channel();
+
+    let worker = thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender));
+
+    let mut response: WorkerResponse;
+    let mut response_count = 0;
+
+    // should have nothing at the beginning
+    assert!(worker_response_receiver.try_recv().is_err());
+
+    // tell the worker to start working 
+    worker_task_sender.send(Work(
+      *game.get_grid(),
+      game.get_state().get_move_count() as usize,
+    )).unwrap();
+
+    // block to get the first response
+    response = worker_response_receiver.recv().unwrap();
+    response_count += 1;
+
+    // the first move should never be None
+    assert!(match response {
+      OptimalMove(_) => true,
+      _ => false,
+    });
+
+    // consume all the responses until a BufferFull is met
+    for response in worker_response_receiver.iter() {
+      response_count += 1;
+      if response == BufferFull { break } // we are assuming we get a BufferFull, if not the loop will go on forever
+    }
+
+    // The number of responses should be now equal to MOVES_QUEUE_CAPACITY + 1, because we count the BufferFull message as well
+    assert_eq!(response_count, MOVES_QUEUE_CAPACITY + 1);
+
+    // After a BufferFull acknowledgement is received, the buffer of messages from the worker should be empty and trying to receive should return a TryRecvError
+    assert!(match worker_response_receiver.try_recv() {
+      Err(_) => true,
+      _ => false,
+    });
+
+    // Sending a MoveReceived acknouledgement should make the worker produce a new move and a BufferFull message again
+    worker_task_sender.send(MoveReceived).unwrap();
+
+    // The first response after sending MoveReceived should be a valid move
+    response = worker_response_receiver.recv().unwrap();
+    assert!(match response {
+      OptimalMove(_) => true,
+      _ => false,
+    });
+
+    // The second response should be a BufferFull again
+    response = worker_response_receiver.recv().unwrap();
+    assert!(match response {
+      BufferFull => true,
+      _ => false,
+    });
+
+    // tell the worker to pause
+    worker_task_sender.send(Pause).unwrap();
+
+    // the buffer is now full so the first response should only be Paused
+    response = worker_response_receiver.recv().unwrap();
+    assert!(match response {
+      Paused => true,
+      _ => false,
+    });
+
+    // tell the worker to restart working and see if it fills the buffer again after a Pause command
+    worker_task_sender.send(Work(
+      *game.get_grid(),
+      game.get_state().get_move_count() as usize,
+    )).unwrap();
+    
+    response_count = 0;
+
+    for response in worker_response_receiver.iter() {
+      response_count += 1;
+      if response == BufferFull { break } // we are assuming we get a BufferFull, if not the loop will go on forever
+    }
+    
+    assert_eq!(response_count, MOVES_QUEUE_CAPACITY + 1);
+
+    // send shutdown and see if it joins without blocking the test forever
+    worker_task_sender.send(Shutdown).unwrap();
+    worker.join().unwrap();
+
+  }
+
+  #[test]
+  #[should_panic]
+  pub fn test_worker_job_panics() {
+
+    let (worker_task_sender, worker_task_receiver): (Sender<WorkerMessage>, Receiver<WorkerMessage>) = mpsc::channel();
+    let (worker_response_sender, _): (Sender<WorkerResponse>, Receiver<WorkerResponse>) = mpsc::channel();
+
+    let worker = thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender));
+
+    worker_task_sender.send(WorkerMessage::Shutdown).unwrap();
+    worker.join().unwrap();
+
+    // cannot communicate with the shut down thread should panic
+    worker_task_sender.send(WorkerMessage::Shutdown).unwrap();
+
   }
 
 }
