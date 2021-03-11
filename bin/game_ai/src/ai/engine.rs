@@ -93,7 +93,7 @@ impl AIEngine {
     
   }
 
-  /// Getters
+  // Getters
   pub fn get_game(&self) -> &Game { &self.game }
   pub fn get_game_mut(&mut self) -> &mut Game {&mut self.game }
   pub fn get_state(&self) -> AIState { self.state }
@@ -101,7 +101,25 @@ impl AIEngine {
   /// Gets the next optimal move enqueued based on the current state of the grid.
   pub fn get_next_optimal_move(&self) -> Option<PlayerMove> {
 
-    unimplemented!("Need to implement optimal move getter from worker messages");
+    let mut option_move: Option<PlayerMove> = None;
+
+    // get an optimal move only if the AI is active so the worker is not Paused (either Working or Waiting)
+    if let AIState::Active = self.state {
+
+      // blocking until we get an optimal move from the worker
+      for message in self.worker_response_receiver.iter() {
+  
+        // When the first optimal move is received send acknowledgement to the worker and break
+        if let WorkerResponse::OptimalMove(option) = message {
+          option_move = option;
+          self.worker_task_sender.send(WorkerMessage::MoveReceived).unwrap();
+          break;
+        }
+      }
+
+    }
+
+    option_move
   }
 
   /// Toggle the AI and return the new state.
@@ -116,6 +134,11 @@ impl AIEngine {
         // should always be able to send
         self.worker_task_sender.send(WorkerMessage::Pause).unwrap();
 
+        // Empty the buffer of moves to be discarded after pausing
+        for message in self.worker_response_receiver.iter() {
+          if let WorkerResponse::Paused = message { break }
+        }
+
         self.state = Inactive;
       },
 
@@ -127,8 +150,9 @@ impl AIEngine {
           self.game.get_state().get_move_count() as usize,
         )).unwrap();
 
-        self.state = Inactive;
+        self.state = Active;
       },
+
     }
 
     self.state
