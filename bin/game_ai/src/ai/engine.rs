@@ -58,7 +58,7 @@ enum WorkerResponse {
 pub struct AIEngine {
   game: Game,
   state: AIState,
-  moves_worker: JoinHandle<()>,
+  moves_worker: Option<JoinHandle<()>>,
   worker_task_sender: Sender<WorkerMessage>,
   worker_response_receiver: Receiver<WorkerResponse>,
 }
@@ -81,7 +81,7 @@ impl AIEngine {
     let (worker_response_sender, worker_response_receiver): (Sender<WorkerResponse>, Receiver<WorkerResponse>) = mpsc::channel();
 
     // this worker thread precomputes and buffers a sequence of optimal moves to make the game flow smoother
-    let moves_worker = thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender));
+    let moves_worker = Some(thread::spawn(move || worker_job(worker_task_receiver, worker_response_sender)));
 
     AIEngine {
       game: Game::new(),
@@ -200,7 +200,9 @@ impl Drop for AIEngine {
 
   fn drop(&mut self) {
 
-    unimplemented!("Should prompt the worker thread to shutdown and join")
+    self.worker_task_sender.send(WorkerMessage::Shutdown).unwrap();
+    self.moves_worker.take().unwrap().join().unwrap();
+
   }
 
 }
@@ -745,7 +747,7 @@ mod tests {
       response_count += 1;
       if response == BufferFull { break } // we are assuming we get a BufferFull, if not the loop will go on forever
     }
-    
+
     assert_eq!(response_count, MOVES_QUEUE_CAPACITY + 1);
 
     // send shutdown and see if it joins without blocking the test forever
