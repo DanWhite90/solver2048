@@ -95,8 +95,7 @@ impl AIEngine {
 
   // Getters
   pub fn get_game(&self) -> &Game { &self.game }
-  pub fn get_game_mut(&mut self) -> &mut Game {&mut self.game }
-  pub fn get_state(&self) -> AIState { self.state }
+  pub fn get_ai_state(&self) -> AIState { self.state }
 
   /// Gets the next optimal move enqueued based on the current state of the grid.
   pub fn get_next_optimal_move(&self) -> Option<PlayerMove> {
