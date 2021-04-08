@@ -4,6 +4,9 @@
 }
 
 :root {
+
+  --navbar-height: 56px;
+
   --tile-size: 95%;
 
   --grid-size: 80vw;
@@ -19,26 +22,42 @@
 /* My styles */
 
 body {
-  border-radius: 5px;
+  /* border-radius: 5px; */
   background: #11998e;  /* fallback for old browsers */
   background: -webkit-linear-gradient(var(--wrapper-gradient), #38ef7d, #11998e);  /* Chrome 10-25, Safari 5.1-6 */
   background: linear-gradient(var(--wrapper-gradient), #38ef7d, #11998e); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */  
-  box-shadow: rgb(54, 255, 205) 0 0 10px, rgb(59, 120, 250) 0 0 3px;
+  /* box-shadow: rgb(54, 255, 205) 0 0 10px, rgb(59, 120, 250) 0 0 3px; */
   height: 100vh;
   overscroll-behavior: none;
   overflow: hidden;
 }
 
-.wrapper {
+/* App Header */
+
+.bg-semi-transparent {
+  background-color: rgba(255, 255, 255, 0.5)
+}
+
+
+/* Main container */
+
+.main {
+  margin-top: var(--navbar-height);
+}
+
+
+/* Game Page */
+
+.game-page .wrapper {
   width: min(var(--grid-size), var(--grid-max-size));
   padding: 30px 0;  
   color: rgb(70, 70, 70);
 }
 
-.wrapper > h1, 
-.wrapper > h3, 
-.wrapper > h5, 
-.wrapper > p {
+.game-page .wrapper > h1, 
+.game-page .wrapper > h3, 
+.game-page .wrapper > h5, 
+.game-page .wrapper > p {
   text-align: center;
 }
 
@@ -68,35 +87,35 @@ body {
   transition: all 0.3s ease-in-out;
 }
 
-.header {
+.game-page .header {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 10px;
 }
 
-.header button {
+.game-page .header button {
   height: 50px;
   width: 50px;
   margin: auto 5px;
 }
 
-.header button:nth-child(2) {
+.game-page .header button:nth-child(2) {
   height: 70px;
   width: 70px;
 }
 
-.header .row:nth-child(2) {
+.game-page .header .row:nth-child(2) {
   margin-top: 5px;
 }
 
-.grid-wrapper {
+.game-page .grid-wrapper {
   height: min(var(--grid-size), var(--grid-max-size));
   width: min(var(--grid-size), var(--grid-max-size));
   margin: 0 auto;
   padding: 0;
 }
 
-.grid, .grid-bg {
+.game-page .grid, .game-page .grid-bg {
   position: absolute;
 
   padding: 4px;
@@ -111,17 +130,17 @@ body {
   grid-auto-rows: auto;
 }
 
-.grid-bg {
+.game-page .grid-bg {
   background-color: rgba(117, 117, 117, 0.7);
 }
 
-.tile, .tile-bg {
+.game-page .tile, .game-page .tile-bg {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.tile > div, .tile-bg > div {
+.game-page .tile > div, .game-page .tile-bg > div {
   background-color: rgb(255, 180, 40);
   padding: 0;
   margin: 0;
@@ -136,22 +155,22 @@ body {
   font-size: 1.5rem;
 }
 
-.tile-bg > div {
+.game-page .tile-bg > div {
   background-color: rgb(214, 203, 140);
 }
 
-.controls {
+.game-page .controls {
   margin-top: 20px;
   width: calc(var(--control-size)*3);
   padding: 0;
 }
 
-.controls .row {
+.game-page .controls .row {
   padding: 0;
   height: var(--control-size);
   margin: 0;
 }
 
-.controls .col{
+.game-page .controls .col{
   height: var(--control-size);
 }

@@ -1,15 +1,15 @@
 import React from "react";
 import {connect} from "react-redux";
-import {Container} from "react-bootstrap";
+import {Container, Button} from "react-bootstrap";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faFrown} from '@fortawesome/free-regular-svg-icons/faFrown';
 import {faGithub} from '@fortawesome/free-brands-svg-icons/faGithub';
 import {Link} from "react-router-dom";
 
-import * as actions from "../../actions";
-import {GAME_STARTED} from "../../globalOptions";
+import * as actions from "../actions";
+import {GAME_STARTED} from "../globalOptions";
 
-const GameStart = props => {
+const Home = props => {
 
   const handleClick = () => {
     props.setGameStatus(GAME_STARTED);
@@ -42,4 +42,4 @@ const mapStateToProps = state => {
   return {grid: state.game.grid};
 };
 
-export default connect(mapStateToProps, actions)(GameStart);
+export default connect(mapStateToProps, actions)(Home);
