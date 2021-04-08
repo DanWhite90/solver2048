@@ -42,12 +42,30 @@ body {
   text-align: center;
 }
 
-.start {
+#start, 
+#start:link,
+#start:visited,
+#start:focus,
+#start:active {
   display: block;
   width: calc(0.5 * min(var(--grid-size), var(--grid-max-size)));
   height: calc(0.5 * min(var(--grid-size), var(--grid-max-size)));
   margin: 60px auto;
   font-size: 1.5rem;
+  text-align: center;
+  line-height: calc(0.5 * min(var(--grid-size), var(--grid-max-size)) - 0.75rem);
+  background-color: rgb(235, 53, 53);
+  border-radius: 50%;
+  color: white;
+  text-decoration: none;
+  box-shadow: rgba(49, 49, 49, 0.719) 0 0 10px;
+  transition: all 0.3s ease-in-out;
+}
+
+#start:hover {
+  text-decoration: none;
+  background-color: rgb(255, 70, 70);
+  transition: all 0.3s ease-in-out;
 }
 
 .header {
